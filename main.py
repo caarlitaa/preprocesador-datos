@@ -1,9 +1,19 @@
-import menu # Importamos la función menu desde menu_funciones.py
+from manejodatos import Datos
 
 def main():
-    """Función principal para ejecutar la aplicación."""
-    menu.menu()  # Llamamos a menu() para iniciar la aplicación
 
-# Ejecutar la función principal
+    """Función principal para ejecutar la aplicación."""
+    Datos()  # Llamamos a menu() para iniciar la aplicación
+
+
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
