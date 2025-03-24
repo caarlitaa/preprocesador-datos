@@ -113,7 +113,7 @@ def obtener_indice_valido(mensaje, max_opciones):
 
         
 def cerrar(): # Cerrar la app de forma segura
-    while True: # Se ejecuta mientras salir sea falso
+    while True:
         print("\n=============================")
         print("     Salir de la Aplicación  ")
         print("=============================")
@@ -125,6 +125,7 @@ def cerrar(): # Cerrar la app de forma segura
         
         if opcion == 1:
             print("\nCerrando la aplicación...")
+            salir = True
             exit(0) # Termina el programa de forma exitosa 
         elif opcion == 2:
             print("\nRegresando al menú principal...")
