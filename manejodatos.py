@@ -41,6 +41,8 @@ class Datos:
             
             elif opcion == "2.3" and self.paso >= 2.3: # Transformar datos categóricos
                 self.opcion2_transformar_categoricos()
+
+            
             
             elif opcion == "5": # Paso para cerrar la app
                 cerrar()
@@ -219,6 +221,7 @@ class Datos:
             etiqueta = LabelEncoder()
             
             for columna in categoricos:
+                self.datos[columna] = self.datos[columna].astype(str)
                 self.datos[columna] = etiqueta.fit_transform(self.datos[columna])
             print("Transformación completada con Label Encoding")
 
