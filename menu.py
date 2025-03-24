@@ -1,28 +1,31 @@
 # Devuelve un símbolo que indica el estado del menú
 def simbolo(paso_requerido, paso_actual):
-    if paso_actual > paso_requerido: # Paso completado
-        return '✓'
-    elif paso_actual == paso_requerido: # Paso en ejecución
+    if paso_actual <  paso_requerido: # Paso completado
+        return '✗'
+    elif paso_actual == paso_requerido or (paso_requerido == 2 and paso_requerido < 3): # Paso en ejecución
         return '-'
     else: # Paso no alcanzado
-        return '✗'
+        return '✓'
 
-def mostrar_menu(paso):
+def mostrar_menu(paso, datos, ruta):
     print("\n=============================")
     print("       Menú Principal       ")
     print("=============================")
-    print(f"[{simbolo(1, paso)}] 1. Cargar datos") # Si los datos fueron cargados se muestra el tick
-    print(f"[{simbolo(2, paso)}] 2. Preprocesado de datos") # Se necesitan datos para las siguientes funciones
 
-    if paso > 2 and paso < 3:  # Si ya se cargaron los datos, habilitar el preprocesado
-        print(f"\t[{simbolo(2.1, paso)}] 2.1 Selección de columnas")
-        print(f"\t[{simbolo(2.2, paso)}] 2.2 Manejo de valores faltantes")
-        print(f"\t[{simbolo(2.3, paso)}] 2.3 Transformación de datos categóricos")
-        print(f"\t[{simbolo(2.4, paso)}] 2.4 Normalización y escalado")
-        print(f"\t[{simbolo(2.5, paso)}] 2.5 Detección y manejo de valores atípicos")
+    print(f"[{simbolo(1, paso)}] 1. Cargar datos ({'ningún archivo cargado' if paso <= 1 else f'archivo {ruta} cargado'})") # Si los datos fueron cargados se muestra el tick
+    print(f"[{simbolo(2, paso)}] 2. Preprocesado de datos {'(requiere carga de datos)' if paso < 2 else '(selección de columnas requerida)' if paso == 2 else '(completado)' if paso >= 3 else ''}")  # Se necesitan datos para las siguientes funciones
 
-    print(f"[{simbolo(3, paso)}] 3. Visualización de datos")  
-    print(f"[{simbolo(4, paso)}] 4. Exportar datos")  
+    # Si ya se cargaron los datos se habilita el preprocesado
+    if paso > 2:  
+        print(f"\t[{simbolo(2.1, paso)}] 2.1 Selección de columnas ({'pendiente' if paso <= 2.1 else 'completado'})")
+        print(f"\t[{simbolo(2.2, paso)}] 2.2 Manejo de valores faltantes ({'pendiente' if paso == 2.2 else 'requiere selección de columnas' if paso < 2.2 else 'completado'})")
+        print(f"\t[{simbolo(2.3, paso)}] 2.3 Transformación de datos categóricos ({'pendiente' if paso == 2.3 else 'requiere manejo de valores faltantes' if paso < 2.3 else 'completado'})")
+        print(f"\t[{simbolo(2.4, paso)}] 2.4 Normalización y escalado ({'pendiente' if paso == 2.4 else 'requiere transformación categórica' if paso < 2.4 else 'completado'})")
+        print(f"\t[{simbolo(2.5, paso)}] 2.5 Detección y manejo de valores atípicos ({'pendiente' if paso == 2.5 else 'requiere normalización' if paso < 2.5 else 'completado'})")
+
+    # Al finalizar el preprocesado se habilitan estas opciones
+    print(f"[{simbolo(3, paso)}] 3. Visualización de datos ({'pendiente' if paso == 3 else 'requiere preprocesado completo' if paso < 3 else 'completado'})")  
+    print(f"[{simbolo(4, paso)}] 4. Exportar datos ({'pendiente' if paso == 4 else 'requiere visualización de datos' if paso < 4 else 'completado'})")  
     print("[✓] 5. Salir")
 
     opcion = input("Seleccione una opción: ")
@@ -73,25 +76,25 @@ def seleccion_terminal(columnas): # Selecciona las columnas de entrada y salida
             if not indices_features:
                 print("Debe seleccionar al menos una columna como feature.")
                 continue
-            # Muestra las columnas seleccionadas como features
+            
             print("\nCaracterísticas seleccionadas:")
             for idx in indices_features:
                 print(f"  - {columnas[idx]}")
             
-            # Solicita al usuario que seleccione la columna target (de salida)
+            
             while True:
                 print("\nAhora seleccione la columna de salida (target):")
                 indice_target = obtener_indice_valido("Ingrese el número de la columna de salida (target): ", len(columnas))
 
-                # Verifica que la columna target no esté ya en las features seleccionadas
+                
                 if indice_target in indices_features:
                     print(f" \n Error: La columna '{columnas[indice_target]}' ya está seleccionada como feature. Debe seleccionar un target que no esté en features")
                 else:
-                    # Muestra la columna seleccionada como target
+                    
                     print(f"\nColumna seleccionada como target: {columnas[indice_target]}")
                     break  # Sale del bucle de selección del target
             
-            # Almacenamos las columnas seleccionadas
+            
             features = [columnas[idx] for idx in indices_features]
             target = columnas[indice_target]
 
