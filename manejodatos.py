@@ -51,11 +51,12 @@ class Datos:
     
     # Carga los datos según el  formato
     def opcion1_carga(self): 
-
         carga = cargar_datos()
         if carga is None:
             return
+        
         opcion, ruta = carga
+
         if not ruta or not os.path.exists(ruta):
             print("Archivo no válido, intente de nuevo")
             return
@@ -74,26 +75,26 @@ class Datos:
                     self.datos = pd.read_excel(ruta)
                 
             elif ruta.endswith('.sqlite') or ruta.endswith('.db'): # Carga dese una base de datos SQLite
-                    conn = sqlite3.connect(ruta)
-                    query = "SELECT name FROM sqlite_master WHERE type='table';"
-                    tables = pd.read_sql(query, conn) # Obtiene las tablas de la base
+                    conexion = sqlite3.connect(ruta)
+                    consulta = "SELECT name FROM sqlite_master WHERE type='table';"
+                    tablas = pd.read_sql(consulta, conexion) # Obtiene las tablas de la base
                     
-                    if tables.empty:
+                    if tablas.empty:
                         raise ValueError("No se encontraron tablas disponibles.")
                     
                     # Muestra las tablas disponibles y solicita la selección de una
                     print("Tablas disponibles en la base de datos:")
-                    for i, table in enumerate(tables['name'], 1):
-                        print(f"  [{i}] {table}")
+                    for i, tabla in enumerate(tablas['name'], 1):
+                        print(f"  [{i}] {tabla}")
 
                     seleccion = input("Seleccione una tabla: ") 
-                    if not seleccion.isdigit() or not (1 <= int(seleccion) <= len(tables)):
+                    if not seleccion.isdigit() or not (1 <= int(seleccion) <= len(tablas)):
                         raise ValueError("Selección inválida.")
                     
                     # Obtiene el nombre y carga sus datos
-                    tabla_seleccionada = tables.iloc[int(seleccion) - 1]['name']
-                    self.datos = pd.read_sql(f"SELECT * FROM {tabla_seleccionada}", conn)
-                    conn.close()
+                    tabla_seleccionada = tablas.iloc[int(seleccion) - 1]['name']
+                    self.datos = pd.read_sql(f"SELECT * FROM {tabla_seleccionada}", conexion)
+                    conexion.close()
                     
                     mostrar_datos(self.datos,ruta)
                     print(f"Los datos de {tabla_seleccionada} fueron cargados correctamente")
@@ -102,9 +103,9 @@ class Datos:
             self.paso = 2
             self.ruta = ruta
                 
-                
         except Exception as e:
             raise ValueError(f"Error al importar datos: {str(e)}")
+    
     # Selecciona las columnas de entrada y salida
     def opcion2_selector_columnas(self):
         self.features, self.targets = seleccion_terminal(list(self.datos.columns))
@@ -148,14 +149,20 @@ class Datos:
         # Elimina las filas que contienen los valores  
         if opcion == 1: 
             self.datos.dropna(subset=seleccionadas, inplace=True)
+            print("Filas con valores faltantes eliminadas correctamente")
         
         # Rellena los valores con la media, la mediana y la moda en columnas numéricas
         elif opcion == 2:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).mean(), inplace=True)
+            print("Valores faltantes rellenados con la media de cada columna")
+        
         elif opcion == 3:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).median(), inplace=True)
+            print("Valores faltantes rellenados con la mediana de cada columna")
+        
         elif opcion == 4:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).mode().iloc[0], inplace=True)
+            print("Valores faltantes rellenados con la moda de cada columna")
 
         # Rellena los valores con un número  específico
         elif opcion == 5:
@@ -170,7 +177,7 @@ class Datos:
             print("Opción inválida.")
             return
         
-        print("\nValores faltantes manejados correctamente.")
+        
         self.paso = 2.3
     
     # Transformación de datos categóricos
