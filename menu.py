@@ -1,10 +1,10 @@
 # Devuelve un símbolo que indica el estado del menú
 def simbolo(paso_requerido, paso_actual):
-    if paso_actual <  paso_requerido: # Paso completado
+    if paso_actual <  paso_requerido: # Paso no alcanzado
         return '✗'
     elif paso_actual == paso_requerido or (paso_requerido == 2 and paso_requerido < 3): # Paso en ejecución
         return '-'
-    else: # Paso no alcanzado
+    else: # Paso completado
         return '✓'
 
 def mostrar_menu(paso, datos, ruta):
@@ -44,8 +44,8 @@ def cargar_datos(): # Carga los datos dependiendo del tipo de archivo
 
         opcion = int(input("Seleccione una opción: "))
 
-        if opcion == 4:
-            return False  # Termina el bucle y vuelve al menú principal
+        if opcion == 4: # Termina el bucle y vuelve al menú principal
+            return   
         if opcion not in [1, 2, 3]:
             print("Opción inválida. Intente de nuevo.")
         else:
@@ -64,13 +64,17 @@ def seleccion_terminal(columnas): # Selecciona las columnas de entrada y salida
     while True:
         # Mostrar las columnas disponibles para que el usuario seleccione las características
         print("\nSeleccione las columnas de entrada (features):")
-        for i, col in enumerate(columnas, 1): 
-            print(f"  [{i}] {col}")  
+        for i, columna in enumerate(columnas, 1): 
+            print(f"  [{i}] {columna}")  
         
         # Solicita la entrada del usuario
         entrada = input("\nIngrese los números de las columnas de entrada (features), separados por comas: ")
         
-        # Convierte la entrada del usuario en una lista de índices
+        # Validar que las columnas estén dentro del rango
+        indice_features = []
+        valido = True 
+        
+        
         try:
             indices_features = [int(x) - 1 for x in entrada.split(",")]  # Convierte a índices de columna (restando 1)
             if not indices_features:
