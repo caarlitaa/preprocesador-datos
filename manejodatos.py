@@ -4,19 +4,21 @@ import pandas as pd
 import sqlite3
 from sklearn.preprocessing import LabelEncoder
 
-class Datos: # Clase que maneja la carga y el preprocesamiento
+# Clase que maneja la carga y el preprocesamiento
+class Datos: 
     def __init__(self, file_path=None):
         self.ruta = None
         self.datos = None
         self.features = []
         self.targets = None
         self.paso = 1
+        self.preprocesado = False
 
         self.proceso() # Inicia el flujo del menú
 
     def proceso(self): 
         while True:
-            opcion = mostrar_menu(self.paso)
+            opcion = mostrar_menu(self.paso, self.paso, self.ruta)
 
             if opcion == "1":  # Cargar datos
                 if self.paso == 1 and not self.datos: # Verifica si los datos ya fueron cargados
@@ -28,9 +30,15 @@ class Datos: # Clase que maneja la carga y el preprocesamiento
                 self.paso = 2.1 # Avanza al primer paso de preprocesamiento
             
             elif opcion == "2.1" and self.paso >= 2.1: # Selección de columnas 
-                self.opcion2_selector()
+                if not self.preprocesado:
+                    self.opcion2_selector_columnas()
+                else:
+                    print("No se pueden cambiar las columnas una vez que se inicia el preprocesado")
+            
             elif opcion == "2.2" and self.paso >= 2.2: # Manejar valores faltantes
+                self.preprocesado = True
                 self.opcion2_manejo_nulos()
+            
             elif opcion == "2.3" and self.paso >= 2.3: # Transformar datos categóricos
                 self.opcion2_transformar_categoricos()
             
@@ -41,13 +49,15 @@ class Datos: # Clase que maneja la carga y el preprocesamiento
                 print("Opción inválida.")
 
     
-    def opcion1_carga(self): # Carga los datos según el  formato
+    # Carga los datos según el  formato
+    def opcion1_carga(self): 
+
         carga = cargar_datos()
         if carga is None:
             return
         opcion, ruta = carga
         if not ruta or not os.path.exists(ruta):
-            print("Archivo no válido, inténtelo de nuevo")
+            print("Archivo no válido, intente de nuevo")
             return
         
         # Verifica que la extensión coincida con la opción seleccionada
@@ -96,7 +106,7 @@ class Datos: # Clase que maneja la carga y el preprocesamiento
         except Exception as e:
             raise ValueError(f"Error al importar datos: {str(e)}")
     # Selecciona las columnas de entrada y salida
-    def opcion2_selector(self):
+    def opcion2_selector_columnas(self):
         self.features, self.targets = seleccion_terminal(list(self.datos.columns))
         self.paso = 2.2
     
