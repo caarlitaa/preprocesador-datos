@@ -42,35 +42,28 @@ class Datos: # Clase que maneja la carga y el preprocesamiento
 
     
     def opcion1_carga(self): # Carga los datos según el  formato
-        opcion, ruta = cargar_datos()
-        if ruta is None:
+        carga = cargar_datos()
+        if carga is None:
             return
-        
-        if not os.path.exists(ruta): # Verifica si existe el archivo
-            print("No existe la tabla")
+        opcion, ruta = carga
+        if not ruta or not os.path.exists(ruta):
+            print("Archivo no válido, inténtelo de nuevo")
             return
         
         # Verifica que la extensión coincida con la opción seleccionada
-        extensiones = (
-        (opcion == 1 and ruta.endswith('.csv')) or
-        (opcion == 2 and (ruta.endswith('.xlsx') or ruta.endswith('.xls'))) or
-        (opcion == 3 and (ruta.endswith('.sqlite') or ruta.endswith('.db')))
-    )
-        if not extensiones:
+        extensiones = {1:'.csv', 2: ('.xlsx','.xls'), 3: ('.sqlite', '.db')}
+        
+        if not ruta.endswith(extensiones.get(opcion, '')):
             print('Archivo inválido: el tipo no coincide con la opción seleccionada')
-        else:
-            try:
-                if ruta.endswith('.csv'): # Carga de un archivo CSV
+            return
+        try:
+            if ruta.endswith('.csv'): # Carga de un archivo CSV
                     self.datos = pd.read_csv(ruta)
-                    mostrar_datos(self.datos,ruta)
-                    self.paso = 2
                 
-                elif ruta.endswith('.xlsx') or ruta.endswith('.xls'): # Carga de un archivo excel
+            elif ruta.endswith('.xlsx') or ruta.endswith('.xls'): # Carga de un archivo excel
                     self.datos = pd.read_excel(ruta)
-                    mostrar_datos(self.datos,ruta)
-                    self.paso = 2
                 
-                elif ruta.endswith('.sqlite') or ruta.endswith('.db'): # Carga dese una base de datos SQLite
+            elif ruta.endswith('.sqlite') or ruta.endswith('.db'): # Carga dese una base de datos SQLite
                     conn = sqlite3.connect(ruta)
                     query = "SELECT name FROM sqlite_master WHERE type='table';"
                     tables = pd.read_sql(query, conn) # Obtiene las tablas de la base
@@ -78,11 +71,12 @@ class Datos: # Clase que maneja la carga y el preprocesamiento
                     if tables.empty:
                         raise ValueError("No se encontraron tablas disponibles.")
                     
+                    # Muestra las tablas disponibles y solicita la selección de una
                     print("Tablas disponibles en la base de datos:")
                     for i, table in enumerate(tables['name'], 1):
                         print(f"  [{i}] {table}")
 
-                    seleccion = input("Seleccione una tabla: ") # Solicita la selección de una tabla
+                    seleccion = input("Seleccione una tabla: ") 
                     if not seleccion.isdigit() or not (1 <= int(seleccion) <= len(tables)):
                         raise ValueError("Selección inválida.")
                     
@@ -93,13 +87,14 @@ class Datos: # Clase que maneja la carga y el preprocesamiento
                     
                     mostrar_datos(self.datos,ruta)
                     print(f"Los datos de {tabla_seleccionada} fueron cargados correctamente")
-                    self.paso = 2
+            
+            mostrar_datos(self.datos, ruta)
+            self.paso = 2
+            self.ruta = ruta
                 
-                else:
-                    raise ValueError("Formato de archivo no compatible. Soportados: CSV, Excel y SQLite.")
-            except Exception as e:
-                raise ValueError(f"Error al importar datos: {str(e)}")
-
+                
+        except Exception as e:
+            raise ValueError(f"Error al importar datos: {str(e)}")
     # Selecciona las columnas de entrada y salida
     def opcion2_selector(self):
         self.features, self.targets = seleccion_terminal(list(self.datos.columns))
