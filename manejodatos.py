@@ -43,6 +43,9 @@ class Datos:
             elif opcion == "2.3" and self.paso >= 2.3: # Transformar datos categóricos
                 self.opcion2_transformar_categoricos()
 
+            elif opcion == "2.4" and self.paso >= 2.4: # Normalizar y escalar valores numéricas
+                self.opcion2_normalizar_numericas()
+
             
             
             elif opcion == "5": # Paso para cerrar la app
@@ -234,3 +237,50 @@ class Datos:
             return
         
         self.paso = 2.4
+
+    def opcion2_normalizar_numericas(self):
+    # Filtra las columnas numéricas dentro de las features seleccionadas
+    numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
+    
+    # Si no hay, informa de ello
+    if not numericas:
+        print("\n=============================")
+        print("Normalización y Escalado")
+        print("=============================")
+        print("No se han detectado columnas numéricas en las variables de entrada seleccionadas.")
+        print("No es necesario aplicar ninguna normalización.")
+        return
+    
+    # Muestra las columnas detectadas
+    print("\n=============================")
+    print("Normalización y Escalado")
+    print("=============================")
+    print("Se han detectado columnas numéricas en las variables de entrada seleccionadas:")
+    for columna in numericas:
+        print(f" - {columna}")
+    
+    # Opciones de normalización
+    print("\nSeleccione una estrategia de normalización:")
+    print(" [1] Min-Max Scaling (escala valores entre 0 y 1)")
+    print(" [2] Z-score Normalization (media 0, desviación estándar 1)")
+    print(" [3] Volver al menú principal")
+    opcion = int(input("Seleccione una opción: "))
+    
+    if opcion == 1:
+        scaler = MinMaxScaler()
+        self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
+        print("Normalización completada con Min-Max Scaling.")
+    
+    elif opcion == 2:
+        scaler = StandardScaler()
+        self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
+        print("Normalización completada con Z-score Normalization.")
+    
+    elif opcion == 3:
+        return
+    
+    else:
+        print("Opción inválida")
+        return
+    
+    self.paso = 2.5 
