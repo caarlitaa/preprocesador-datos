@@ -45,6 +45,10 @@ class Datos:
 
             elif opcion == "2.4" and self.paso >= 2.4: # Normalizar y escalar valores numéricas
                 self.opcion2_normalizar_numericas()
+            
+            elif opcion == "2.5" and self.paso >= 2.5: # Manejar valores atípicos
+                self.opcion2_manejo_atipicos()
+                self.preprocesado = False
 
             
             
@@ -130,6 +134,7 @@ class Datos:
             print("Manejo de Valores Faltantes")
             print("=============================")
             print("No se han detectado valores faltantes en las columnas seleccionadas.")
+            print("No es necesario aplicar ninguna estrategia")
             self.paso = 2.3
             return
         
@@ -284,3 +289,82 @@ class Datos:
             return
         
         self.paso = 2.5 
+
+    def opcion2_manejo_atipicos(self):
+            # Seleccionamos las columnas numéricas dentro de las variables de entrada
+            numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
+            
+            if not numericas:
+                print("\n=============================")
+                print("Detección y Manejo de Valores Atípicos")
+                print("=============================")
+                print("No se han detectado columnas numéricas en las variables de entrada seleccionadas.")
+                return
+            
+            valores_atipicos = {} # Almacenamos la cantidad de valores atípicos por columna
+            
+            # Identificamos valores atípicos utilizando el rango intercuartílico (IQR)
+            for columna in numericas:
+                Q1 = self.datos[columna].quantile(0.25)
+                Q3 = self.datos[columna].quantile(0.75)
+                IQR = Q3 - Q1
+                # Contamos los atípicos fuera del ranfo permitido
+                atipicos = ((self.datos[columna] < (Q1 - 1.5 * IQR)) | (self.datos[columna] > (Q3 + 1.5 * IQR))).sum()
+                if atipicos > 0:
+                    valores_atipicos[columna] = atipicos
+            
+            # Si no se detecta ninguno, informa de ello
+            if not valores_atipicos:
+                print("\n=============================")
+                print("Detección y Manejo de Valores Atípicos")
+                print("=============================")
+                print("No se han detectado valores atípicos en las columnas seleccionadas.")
+                print("No es necesario aplicar ninguna estrategia")
+                self.paso = 3
+                return
+            
+            # Mostramos las columnas y la cantidad detectada
+            print("\n=============================")
+            print("Detección y Manejo de Valores Atípicos")
+            print("=============================")
+            print("Se han detectado valores atípicos en las siguientes columnas numéricas seleccionadas:")
+            for columna, cantidad in valores_atipicos.items():
+                print(f"  - {columna}: {cantidad} valores atípicos detectados")
+            
+            # Opciones para el manejo de los valores
+            print("\nSeleccione una estrategia para manejar los valores atípicos:")
+            print("  [1] Eliminar filas con valores atípicos")
+            print("  [2] Reemplazar valores atípicos con la mediana de la columna")
+            print("  [3] Mantener valores atípicos sin cambios")
+            print("  [4] Volver al menú principal")
+            
+            opcion = int(input("Seleccione una opción: "))
+            
+            if opcion == 1: # Eliminar filas 
+                for columna in valores_atipicos.keys():
+                    Q1 = self.datos[columna].quantile(0.25)
+                    Q3 = self.datos[columna].quantile(0.75)
+                    IQR = Q3 - Q1
+                    self.datos = self.datos[(self.datos[columna] >= (Q1 - 1.5 * IQR)) & (self.datos[columna] <= (Q3 + 1.5 * IQR))]
+                print("Filas con valores atípicos eliminadas correctamente.")
+            
+            elif opcion == 2: # Reemplazar con la mediana de la columna
+                for columna in valores_atipicos.keys():
+                    mediana = self.datos[columna].median()
+                    Q1 = self.datos[columna].quantile(0.25)
+                    Q3 = self.datos[columna].quantile(0.75)
+                    IQR = Q3 - Q1
+                    self.datos.loc[(self.datos[columna] < (Q1 - 1.5 * IQR)) | (self.datos[columna] > (Q3 + 1.5 * IQR)), columna] = mediana
+                print("Valores atípicos reemplazados con la mediana de cada columna.")
+            
+            elif opcion == 3: # Se mantienen los valores
+                print("Valores atípicos mantenidos sin cambios.")
+            
+            elif opcion == 4:
+                return
+            
+            else:
+                print("Opción inválida.")
+                return
+            
+            self.paso = 3
