@@ -1,0 +1,50 @@
+1) Definición y ventajas
+
+Venv es una herramienta incorporada en Python que permite crear entornos virtuales, es decir, directorios aislados donde puedes instalar paquetes sin afectar el sistema global.
+
+Las principales ventajas son:
+- Evita conflictos de dependencias: Diferentes proyectos pueden tener versiones distintas de los mismos paquetes.
+- Mejora la portabilidad del código: Puedes compartir un proyecto sin preocuparte por versiones de paquetes incompatibles.
+- Mantiene limpio el sistema global: No ensucias la instalación principal de Python con paquetes innecesarios.
+- Facilita la gestión de dependencias: Puedes guardar y restaurar paquetes fácilmente con requirements.txt.
+
+2) Crear y activar un entorno virtual 
+
+Para crear un entorno virtual debemos ejecutar el comando 'python -m venv venv'. Una vez creado deberemos activarlo con 'venv\Scripts\activate'
+Si estamos utilizando MAC, el entorno se creará con el mismo comando, pero para activarlo deberemos ejecutar 'source venv/bin/activate'
+Si lo hemos hecho bien, el prompt de la terminal cambia y aparece (venv).
+
+3) Instalación y gestión de paquetes en venv
+
+Una vez activado el entorno virtual, los paquetes se instalan solo dentro de venv, sin afectar el sistema global. Para ello deberemos utilizar el comando pip install seguido del nombre del paquete.Por ejemplo. si queremos descargar NumPy el comando deberá ser 'pip install numpy'
+
+El comando 'pip list' nos muestra la lista de los paquetes instalados, pero si lo que queremos es buscar uno utilizaremos el comando pip show <nombre del paquete>
+
+4) Guardar y restaurar dependencias
+
+Guardaremos la lista de paquetes en un archivo ejecutando 'pip freeze > <nombre archivo> y en caso de querer restaurar las dependencias en otro entorno usaremos 'pip install -r <nombre_archivo>'.
+En nuestro caso utilizamos el archivo requirements.txt
+
+5) Desactivar y eliminar un entorno
+
+Con el comando 'deactivate' desactivamos el entorno y volveremos al sistema global de Python. En caso de querer borrarlo utilizaremos 'rd /s /q venv' en Windows o 'rm -rf venv' en MAC. Esta utlima accion es irreversible, para volver a trabajar con un entorno virtual deberemos crear uno nuevo
+
+6) Configurar y gestionar venv en VS Code
+
+Paso 1: Abrir VS Code en la carpeta del proyecto
+Paso 2: Seleccionar el interprete en la paleta de comandos (esto se puede hacer con Ctrl + Shift + P en Windows/Linux o Cmd + Shift + P en MAC).
+Paso 3: Buscar en la lista de interpretes el entorno virtual ( venv\Scripts\python.exe en Windows o venv/bin/python en Linux/macOS)
+Paso 4:Verificar que este activado mediante el comando 'python --version'
+
+
+7) Ejecutar un script en el entorno virtual en VS Code
+
+Primero crearemos un archivo test en Python, al ejecutarlo debe aparecer que se está ejecutando mediante venv
+
+8) ¿Cómo saber si venv está correctamente configurado en VS Code?
+
+En la barra inferior izquierda de VS Code debe aparecer algo como:
+Python 3.10.5 ('venv': venv).
+
+
+

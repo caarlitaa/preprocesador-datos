@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
 from menu import mostrar_menu, cerrar, cargar_datos, mostrar_datos, seleccion_terminal
 import os
 import pandas as pd
@@ -42,6 +45,7 @@ class Datos:
             
             elif opcion == "2.3" and self.paso >= 2.3: # Transformar datos categóricos
                 self.opcion2_transformar_categoricos()
+<<<<<<< HEAD
 
             elif opcion == "2.4" and self.paso >= 2.4: # Normalizar y escalar valores numéricas
                 self.opcion2_normalizar_numericas()
@@ -49,6 +53,12 @@ class Datos:
             elif opcion == "2.5" and self.paso >= 2.5: # Manejar valores atípicos
                 self.opcion2_manejo_atipicos()
                 self.preprocesado = False
+=======
+            
+            elif opcion == "2.4" and self.paso >= 2.4: # Normalizar y escalar valores numéricas
+                self.opcion2_normalizar_numericas()
+            
+>>>>>>> master
 
             
             
@@ -134,7 +144,10 @@ class Datos:
             print("Manejo de Valores Faltantes")
             print("=============================")
             print("No se han detectado valores faltantes en las columnas seleccionadas.")
+<<<<<<< HEAD
             print("No es necesario aplicar ninguna estrategia")
+=======
+>>>>>>> master
             self.paso = 2.3
             return
         
@@ -242,9 +255,15 @@ class Datos:
             return
         
         self.paso = 2.4
+<<<<<<< HEAD
 
     def opcion2_normalizar_numericas(self):
     # Filtra las columnas numéricas dentro de las features seleccionadas
+=======
+    
+    def opcion2_normalizar_numericas(self):
+        # Filtra las columnas numéricas dentro de las features seleccionadas
+>>>>>>> master
         numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
         
         # Si no hay, informa de ello
@@ -289,6 +308,7 @@ class Datos:
             return
         
         self.paso = 2.5 
+<<<<<<< HEAD
 
     def opcion2_manejo_atipicos(self):
             # Seleccionamos las columnas numéricas dentro de las variables de entrada
@@ -368,3 +388,8 @@ class Datos:
                 return
             
             self.paso = 3
+=======
+        
+    
+
+>>>>>>> master
