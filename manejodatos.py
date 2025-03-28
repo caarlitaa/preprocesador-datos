@@ -295,3 +295,142 @@ class Datos:
         
     
 
+    def opcion2_manejo_atipicos(self):
+        # Seleccionamos las columnas numéricas dentro de las variables de entrada
+        numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
+        
+        if not numericas:
+            print("\n=============================")
+            print("Detección y Manejo de Valores Atípicos")
+            print("=============================")
+            print("No se han detectado columnas numéricas en las variables de entrada seleccionadas.")
+            return
+        
+        valores_atipicos = {} # Almacenamos la cantidad de valores atípicos por columna
+        
+        # Identificamos valores atípicos utilizando el rango intercuartílico (IQR)
+        for columna in numericas:
+            Q1 = self.datos[columna].quantile(0.25)
+            Q3 = self.datos[columna].quantile(0.75)
+            IQR = Q3 - Q1
+            # Contamos los atípicos fuera del ranfo permitido
+            atipicos = ((self.datos[columna] < (Q1 - 1.5 * IQR)) | (self.datos[columna] > (Q3 + 1.5 * IQR))).sum()
+            if atipicos > 0:
+                valores_atipicos[columna] = atipicos
+        
+        # Si no se detecta ninguno, informa de ello
+        if not valores_atipicos:
+            print("\n=============================")
+            print("Detección y Manejo de Valores Atípicos")
+            print("=============================")
+            print("No se han detectado valores atípicos en las columnas seleccionadas.")
+            self.paso = 3
+            return
+        
+        # Mostramos las columnas y la cantidad detectada
+        print("\n=============================")
+        print("Detección y Manejo de Valores Atípicos")
+        print("=============================")
+        print("Se han detectado valores atípicos en las siguientes columnas numéricas seleccionadas:")
+        for columna, cantidad in valores_atipicos.items():
+            print(f"  - {columna}: {cantidad} valores atípicos detectados")
+        
+        # Opciones para el manejo de los valores
+        print("\nSeleccione una estrategia para manejar los valores atípicos:")
+        print("  [1] Eliminar filas con valores atípicos")
+        print("  [2] Reemplazar valores atípicos con la mediana de la columna")
+        print("  [3] Mantener valores atípicos sin cambios")
+        print("  [4] Volver al menú principal")
+        
+        opcion = int(input("Seleccione una opción: "))
+        
+        if opcion == 1: # Eliminar filas 
+            for columna in valores_atipicos.keys():
+                Q1 = self.datos[columna].quantile(0.25)
+                Q3 = self.datos[columna].quantile(0.75)
+                IQR = Q3 - Q1
+                self.datos = self.datos[(self.datos[columna] >= (Q1 - 1.5 * IQR)) & (self.datos[columna] <= (Q3 + 1.5 * IQR))]
+            print("Filas con valores atípicos eliminadas correctamente.")
+        
+        elif opcion == 2: # Reemplazar con la mediana de la columna
+            for columna in valores_atipicos.keys():
+                mediana = self.datos[columna].median()
+                Q1 = self.datos[columna].quantile(0.25)
+                Q3 = self.datos[columna].quantile(0.75)
+                IQR = Q3 - Q1
+                self.datos.loc[(self.datos[columna] < (Q1 - 1.5 * IQR)) | (self.datos[columna] > (Q3 + 1.5 * IQR)), columna] = mediana
+            print("Valores atípicos reemplazados con la mediana de cada columna.")
+        
+        elif opcion == 3: # Se mantienen los valores
+            print("Valores atípicos mantenidos sin cambios.")
+        
+        elif opcion == 4:
+            return
+        
+        else:
+            print("Opción inválida.")
+            return
+        
+        self.paso = 3
+        
+
+
+    def opcion3_visualizar_datos(self):
+        print("\n=============================")
+        print("Visualización de Datos")
+        print("=============================")
+
+        # Verifica si el preprocesado fue completado
+        if self.paso < 3:
+            print("No es posible visualizar los datos hasta que se complete el preprocesado.")
+            print("Por favor, finalice el manejo de valores atípicos antes de continuar")
+            return
+        
+        # Verificar que las columnas seleccionadas existen en el DataFrame
+        columnas = [columna for columna in self.features if columna in self.datos.columns]
+        if not columnas:
+            print("No se encontraron columnas seleccionadas en los datos.")
+            return
+
+        # Opciones de visualización
+        print("Seleccione qué tipo de visualización desea generar:")
+        print("  [1] Resumen estadístico de las variables seleccionadas")
+        print("  [2] Histogramas de variables numéricas")
+        print("  [3] Gráficos de dispersión antes y después de la normalización")
+        print("  [4] Heatmap de correlación de variables numéricas")
+        print("  [5] Volver al menú principal")
+
+        opcion = int(input("Seleccione una opción: "))
+        
+        if opcion == 1: # Resumen estadísticos de las columnas seleccionadas
+            print("\nResumen estadístico de las variables seleccionadas:")
+            print(self.datos[columnas].describe())
+        
+        elif opcion == 2: # Histogramas para las columnas numéricas
+            self.datos[columnas].hist(bins=20, figsize=(12, 8))
+            plt.show()
+        
+        elif opcion == 3: # Gráficos de dispersión antes y después de la normalización
+            for columna in columnas:
+                if self.datos[columna].dtype in ['int64', 'float64']:
+                    plt.figure(figsize=(6, 4))
+                    plt.scatter(range(len(self.datos)), self.datos[columna], label=f"{columna} (original)", alpha=0.5)
+                    plt.scatter(range(len(self.datos)), MinMaxScaler().fit_transform(self.datos[[columna]]), label=f"{columna} (normalizado)", alpha=0.5)
+                    plt.legend()
+                    plt.title(f"Comparación de {columna} antes y después de la normalización")
+                    plt.show()
+        
+        elif opcion == 4: # Heatmap de la correlación entre variables numéricas
+            plt.figure(figsize=(10, 6))
+            sns.heatmap(self.datos[columnas].corr(), annot=True, cmap="coolwarm", fmt=".2f")
+            plt.title("Heatmap de correlación de variables numéricas")
+            plt.show()
+        
+        elif opcion == 5:
+            return
+        
+        else:
+            print("Opción inválida.")
+            return
+
+        self.paso = 4
