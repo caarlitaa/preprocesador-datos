@@ -1,12 +1,11 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 from menu import mostrar_menu, cerrar, cargar_datos, mostrar_datos, seleccion_terminal
 import os
 import pandas as pd
 import sqlite3
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
+
 
 # Clase que maneja la carga y el preprocesamiento
 class Datos: 
@@ -17,12 +16,15 @@ class Datos:
         self.targets = None
         self.paso = 1
         self.preprocesado = False
+    
+        
 
         self.proceso() # Inicia el flujo del menú
 
+
     def proceso(self): 
         while True:
-            opcion = mostrar_menu(self.paso, self.paso, self.ruta)
+            opcion = mostrar_menu(self.paso, self.datos, self.ruta)
 
             if opcion == "1":  # Cargar datos
                 if self.paso == 1 and not self.datos: # Verifica si los datos ya fueron cargados
@@ -31,36 +33,30 @@ class Datos:
                     print(" Los datos ya están cargados.")
             
             elif opcion == "2" and self.paso == 2: # Preprocesamiento
-                self.paso = 2.1 # Avanza al primer paso de preprocesamiento
+                self.paso = 2.1 
             
             elif opcion == "2.1" and self.paso >= 2.1: # Selección de columnas 
                 if not self.preprocesado:
                     self.opcion2_selector_columnas()
-                else:
+                else: 
                     print("No se pueden cambiar las columnas una vez que se inicia el preprocesado")
-            
             elif opcion == "2.2" and self.paso >= 2.2: # Manejar valores faltantes
                 self.preprocesado = True
                 self.opcion2_manejo_nulos()
-            
             elif opcion == "2.3" and self.paso >= 2.3: # Transformar datos categóricos
                 self.opcion2_transformar_categoricos()
-<<<<<<< HEAD
-
             elif opcion == "2.4" and self.paso >= 2.4: # Normalizar y escalar valores numéricas
                 self.opcion2_normalizar_numericas()
-            
             elif opcion == "2.5" and self.paso >= 2.5: # Manejar valores atípicos
                 self.opcion2_manejo_atipicos()
                 self.preprocesado = False
-=======
             
-            elif opcion == "2.4" and self.paso >= 2.4: # Normalizar y escalar valores numéricas
-                self.opcion2_normalizar_numericas()
+            elif opcion == "3" and self.paso >= 3: # Visualizar datos antes y después
+                self.opcion3_visualizar_datos()
+                self.preprocesado_comp = True
             
->>>>>>> master
-
-            
+            elif opcion == "4" and self.paso >= 4: # Exportar los datos
+                self.opcion4_exportar_datos()
             
             elif opcion == "5": # Paso para cerrar la app
                 cerrar()
@@ -69,16 +65,13 @@ class Datos:
                 print("Opción inválida.")
 
     
-    # Carga los datos según el  formato
-    def opcion1_carga(self): 
+    def opcion1_carga(self): # Carga los datos según el  formato
         carga = cargar_datos()
         if carga is None:
             return
-        
         opcion, ruta = carga
-
         if not ruta or not os.path.exists(ruta):
-            print("Archivo no válido, intente de nuevo")
+            print("Archivo no válido, inténtelo de nuevo")
             return
         
         # Verifica que la extensión coincida con la opción seleccionada
@@ -95,26 +88,26 @@ class Datos:
                     self.datos = pd.read_excel(ruta)
                 
             elif ruta.endswith('.sqlite') or ruta.endswith('.db'): # Carga dese una base de datos SQLite
-                    conexion = sqlite3.connect(ruta)
-                    consulta = "SELECT name FROM sqlite_master WHERE type='table';"
-                    tablas = pd.read_sql(consulta, conexion) # Obtiene las tablas de la base
+                    conn = sqlite3.connect(ruta)
+                    query = "SELECT name FROM sqlite_master WHERE type='table';"
+                    tables = pd.read_sql(query, conn) # Obtiene las tablas de la base
                     
-                    if tablas.empty:
+                    if tables.empty:
                         raise ValueError("No se encontraron tablas disponibles.")
                     
                     # Muestra las tablas disponibles y solicita la selección de una
                     print("Tablas disponibles en la base de datos:")
-                    for i, tabla in enumerate(tablas['name'], 1):
-                        print(f"  [{i}] {tabla}")
+                    for i, table in enumerate(tables['name'], 1):
+                        print(f"  [{i}] {table}")
 
                     seleccion = input("Seleccione una tabla: ") 
-                    if not seleccion.isdigit() or not (1 <= int(seleccion) <= len(tablas)):
+                    if not seleccion.isdigit() or not (1 <= int(seleccion) <= len(tables)):
                         raise ValueError("Selección inválida.")
                     
                     # Obtiene el nombre y carga sus datos
-                    tabla_seleccionada = tablas.iloc[int(seleccion) - 1]['name']
-                    self.datos = pd.read_sql(f"SELECT * FROM {tabla_seleccionada}", conexion)
-                    conexion.close()
+                    tabla_seleccionada = tables.iloc[int(seleccion) - 1]['name']
+                    self.datos = pd.read_sql(f"SELECT * FROM {tabla_seleccionada}", conn)
+                    conn.close()
                     
                     mostrar_datos(self.datos,ruta)
                     print(f"Los datos de {tabla_seleccionada} fueron cargados correctamente")
@@ -123,9 +116,10 @@ class Datos:
             self.paso = 2
             self.ruta = ruta
                 
+                
         except Exception as e:
             raise ValueError(f"Error al importar datos: {str(e)}")
-    
+
     # Selecciona las columnas de entrada y salida
     def opcion2_selector_columnas(self):
         self.features, self.targets = seleccion_terminal(list(self.datos.columns))
@@ -144,10 +138,7 @@ class Datos:
             print("Manejo de Valores Faltantes")
             print("=============================")
             print("No se han detectado valores faltantes en las columnas seleccionadas.")
-<<<<<<< HEAD
             print("No es necesario aplicar ninguna estrategia")
-=======
->>>>>>> master
             self.paso = 2.3
             return
         
@@ -179,11 +170,9 @@ class Datos:
         elif opcion == 2:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).mean(), inplace=True)
             print("Valores faltantes rellenados con la media de cada columna")
-        
         elif opcion == 3:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).median(), inplace=True)
             print("Valores faltantes rellenados con la mediana de cada columna")
-        
         elif opcion == 4:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).mode().iloc[0], inplace=True)
             print("Valores faltantes rellenados con la moda de cada columna")
@@ -194,7 +183,6 @@ class Datos:
             self.datos.fillna(float(valor), inplace=True)
             print(f"Valores faltantes reemplazados con el valor {valor}")
         
-        # Volver al menú principal
         elif opcion == 6:
             return
         else:
@@ -203,13 +191,15 @@ class Datos:
         
         
         self.paso = 2.3
+        
     
     # Transformación de datos categóricos
     def opcion2_transformar_categoricos(self):
+
         # Filtra las columnas categóricas dentro de las features seleccionadas
         categoricos = [columna for columna in self.features if self.datos[columna].dtype == 'object']
 
-        # Si no hay, informa y marca el paso
+        # Si no hay, informa de ello
         if not categoricos:
             print("\n=============================")
             print("Transformación de Datos Categóricos")
@@ -255,15 +245,9 @@ class Datos:
             return
         
         self.paso = 2.4
-<<<<<<< HEAD
 
     def opcion2_normalizar_numericas(self):
-    # Filtra las columnas numéricas dentro de las features seleccionadas
-=======
-    
-    def opcion2_normalizar_numericas(self):
         # Filtra las columnas numéricas dentro de las features seleccionadas
->>>>>>> master
         numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
         
         # Si no hay, informa de ello
@@ -308,88 +292,6 @@ class Datos:
             return
         
         self.paso = 2.5 
-<<<<<<< HEAD
-
-    def opcion2_manejo_atipicos(self):
-            # Seleccionamos las columnas numéricas dentro de las variables de entrada
-            numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
-            
-            if not numericas:
-                print("\n=============================")
-                print("Detección y Manejo de Valores Atípicos")
-                print("=============================")
-                print("No se han detectado columnas numéricas en las variables de entrada seleccionadas.")
-                return
-            
-            valores_atipicos = {} # Almacenamos la cantidad de valores atípicos por columna
-            
-            # Identificamos valores atípicos utilizando el rango intercuartílico (IQR)
-            for columna in numericas:
-                Q1 = self.datos[columna].quantile(0.25)
-                Q3 = self.datos[columna].quantile(0.75)
-                IQR = Q3 - Q1
-                # Contamos los atípicos fuera del ranfo permitido
-                atipicos = ((self.datos[columna] < (Q1 - 1.5 * IQR)) | (self.datos[columna] > (Q3 + 1.5 * IQR))).sum()
-                if atipicos > 0:
-                    valores_atipicos[columna] = atipicos
-            
-            # Si no se detecta ninguno, informa de ello
-            if not valores_atipicos:
-                print("\n=============================")
-                print("Detección y Manejo de Valores Atípicos")
-                print("=============================")
-                print("No se han detectado valores atípicos en las columnas seleccionadas.")
-                print("No es necesario aplicar ninguna estrategia")
-                self.paso = 3
-                return
-            
-            # Mostramos las columnas y la cantidad detectada
-            print("\n=============================")
-            print("Detección y Manejo de Valores Atípicos")
-            print("=============================")
-            print("Se han detectado valores atípicos en las siguientes columnas numéricas seleccionadas:")
-            for columna, cantidad in valores_atipicos.items():
-                print(f"  - {columna}: {cantidad} valores atípicos detectados")
-            
-            # Opciones para el manejo de los valores
-            print("\nSeleccione una estrategia para manejar los valores atípicos:")
-            print("  [1] Eliminar filas con valores atípicos")
-            print("  [2] Reemplazar valores atípicos con la mediana de la columna")
-            print("  [3] Mantener valores atípicos sin cambios")
-            print("  [4] Volver al menú principal")
-            
-            opcion = int(input("Seleccione una opción: "))
-            
-            if opcion == 1: # Eliminar filas 
-                for columna in valores_atipicos.keys():
-                    Q1 = self.datos[columna].quantile(0.25)
-                    Q3 = self.datos[columna].quantile(0.75)
-                    IQR = Q3 - Q1
-                    self.datos = self.datos[(self.datos[columna] >= (Q1 - 1.5 * IQR)) & (self.datos[columna] <= (Q3 + 1.5 * IQR))]
-                print("Filas con valores atípicos eliminadas correctamente.")
-            
-            elif opcion == 2: # Reemplazar con la mediana de la columna
-                for columna in valores_atipicos.keys():
-                    mediana = self.datos[columna].median()
-                    Q1 = self.datos[columna].quantile(0.25)
-                    Q3 = self.datos[columna].quantile(0.75)
-                    IQR = Q3 - Q1
-                    self.datos.loc[(self.datos[columna] < (Q1 - 1.5 * IQR)) | (self.datos[columna] > (Q3 + 1.5 * IQR)), columna] = mediana
-                print("Valores atípicos reemplazados con la mediana de cada columna.")
-            
-            elif opcion == 3: # Se mantienen los valores
-                print("Valores atípicos mantenidos sin cambios.")
-            
-            elif opcion == 4:
-                return
-            
-            else:
-                print("Opción inválida.")
-                return
-            
-            self.paso = 3
-=======
         
     
 
->>>>>>> master
