@@ -2,6 +2,8 @@ from menu import mostrar_menu, cerrar, cargar_datos, mostrar_datos, seleccion_te
 import os
 import pandas as pd
 import sqlite3
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
 
 # Clase que maneja la carga y el preprocesamiento
@@ -368,3 +370,64 @@ class Datos:
             return
         
         self.paso = 3
+
+    
+    def opcion3_visualizar_datos(self):
+        print("\n=============================")
+        print("Visualización de Datos")
+        print("=============================")
+
+        # Verifica si el preprocesado fue completado
+        if self.paso < 3:
+            print("No es posible visualizar los datos hasta que se complete el preprocesado.")
+            print("Por favor, finalice el manejo de valores atípicos antes de continuar")
+            return
+        
+        # Verificar que las columnas seleccionadas existen en el DataFrame
+        columnas = [columna for columna in self.features if columna in self.datos.columns]
+        if not columnas:
+            print("No se encontraron columnas seleccionadas en los datos.")
+            return
+
+        # Opciones de visualización
+        print("Seleccione qué tipo de visualización desea generar:")
+        print("  [1] Resumen estadístico de las variables seleccionadas")
+        print("  [2] Histogramas de variables numéricas")
+        print("  [3] Gráficos de dispersión antes y después de la normalización")
+        print("  [4] Heatmap de correlación de variables numéricas")
+        print("  [5] Volver al menú principal")
+
+        opcion = int(input("Seleccione una opción: "))
+        
+        if opcion == 1: # Resumen estadísticos de las columnas seleccionadas
+            print("\nResumen estadístico de las variables seleccionadas:")
+            print(self.datos[columnas].describe())
+        
+        elif opcion == 2: # Histogramas para las columnas numéricas
+            self.datos[columnas].hist(bins=20, figsize=(12, 8))
+            plt.show()
+        
+        elif opcion == 3: # Gráficos de dispersión antes y después de la normalización
+            for columna in columnas:
+                if self.datos[columna].dtype in ['int64', 'float64']:
+                    plt.figure(figsize=(6, 4))
+                    plt.scatter(range(len(self.datos)), self.datos[columna], label=f"{columna} (original)", alpha=0.5)
+                    plt.scatter(range(len(self.datos)), MinMaxScaler().fit_transform(self.datos[[columna]]), label=f"{columna} (normalizado)", alpha=0.5)
+                    plt.legend()
+                    plt.title(f"Comparación de {columna} antes y después de la normalización")
+                    plt.show()
+        
+        elif opcion == 4: # Heatmap de la correlación entre variables numéricas
+            plt.figure(figsize=(10, 6))
+            sns.heatmap(self.datos[columnas].corr(), annot=True, cmap="coolwarm", fmt=".2f")
+            plt.title("Heatmap de correlación de variables numéricas")
+            plt.show()
+        
+        elif opcion == 5:
+            return
+        
+        else:
+            print("Opción inválida.")
+            return
+
+        self.paso = 4
