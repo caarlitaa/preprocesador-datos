@@ -431,3 +431,45 @@ class Datos:
             return
 
         self.paso = 4
+
+    def opcion4_exportar_datos(self):
+        print("\n=============================")
+        print("Exportación de Datos")
+        print("=============================")
+    
+    # Verifica si preprocesado y visualización fueron completados
+        if self.paso < 4:
+            print("No es posible exportar los datos hasta que se complete el preprocesado y la visualización.")
+            print("Por favor, finalice todas las etapas antes de continuar")
+            return
+
+        # Opciones de exportación
+        print("Seleccione el formato de exportación:")
+        print("  [1] CSV (.csv)")
+        print("  [2] Excel (.xlsx)")
+        print("  [3] Volver al menú principal")
+
+        opcion = int(input("Seleccione una opción: "))
+        
+        # Valida la opción
+        if opcion not in [1, 2]:
+            print("Opción inválida.")
+            return
+        
+        # Solicita el nombre del archivo sin extensión
+        nombre = input("Ingrese el nombre del archivo de salida (sin extensión): ")
+        
+        # Exporta los datos en el formato seleccionado
+        if opcion == 1: # CSV
+            archivo  = f"{nombre}.csv"
+            self.datos.to_csv(archivo, index=False)
+        
+        elif opcion == 2: # Excel
+            archivo= f"{nombre}.xlsx"
+            self.datos.to_excel(archivo, index=False)
+        
+        elif opcion == 3:
+            return
+        print(f"Datos exportados correctamente como \"{archivo}\".")
+
+        self.paso = 5
