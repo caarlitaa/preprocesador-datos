@@ -1,117 +1,160 @@
-
-import unittest
-from unittest.mock import patch, MagicMock
-import os
+import pytest
 import pandas as pd
-from manejodatos import Datos
+from unittest.mock import patch, MagicMock
+from manejodatos import Datos  # Asegúrate de que el nombre del archivo sea correcto
 
-class TestDatos(unittest.TestCase):
+@pytest.fixture
+def datos_instance():
+    """Crea una instancia de la clase Datos para cada prueba."""
+    return Datos()
 
-    @patch('manejodatos.pd.read_csv')  # Mockea la función pd.read_csv
-    def test_cargar_datos_csv(self, mock_read_csv):
-        # Simulamos que pd.read_csv devuelve un DataFrame cuando se llama
-        mock_read_csv.return_value = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
-        
-        # Creamos un objeto de la clase Datos
-        datos = Datos()
-        ruta = 'ruta/al/archivo.csv'
-        
-        # Simulamos la carga de datos
-        datos.opcion1_carga()
-        
-        # Comprobamos que los datos se cargaron correctamente
-        self.assertIsNotNone(datos.datos)
-        self.assertEqual(datos.datos.shape, (3, 2))  # Comprobamos que el DataFrame tiene 3 filas y 2 columnas
+def test_opcion1_carga_csv(datos_instance):
+    """Prueba la carga de datos desde un archivo CSV."""
+    with patch('menu.cargar_datos', return_value=(1, 'test.csv')):
+        with patch('pandas.read_csv', return_value=pd.DataFrame({'A': [1, 2], 'B': [3, 4]})):
+            datos_instance.opcion1_carga()
+            assert datos_instance.datos is not None
+            assert not datos_instance.datos.empty
+            assert datos_instance.ruta == 'test.csv'
+            assert datos_instance.paso == 2
 
-    @patch('builtins.input', return_value='1')  # Mockea la entrada para que siempre devuelva '1'
-    @patch('manejodatos.mostrar_menu', return_value='1')  # Mockea el menú para simular que se elige la opción 1
-    def test_proceso_cargar_datos(self, mock_menu, mock_input):
-        # Simulamos que no hay datos cargados y se elige cargar datos
-        datos = Datos(file_path=None)
-        
-        # Aseguramos que la opción cargue los datos correctamente
-        self.assertEqual(datos.paso, 2)  # El paso debe ser 2 después de cargar los datos
-    
-    @patch('builtins.input', return_value='1')
-    def test_opcion2_selector_columnas(self, mock_input):
-        # Simula la selección de columnas
-        datos = Datos(file_path=None)
-        datos.datos = pd.DataFrame({'col1': [1, 2], 'col2': [3, 4], 'col3': [5, 6]})
-        datos.features = ['col1', 'col2', 'col3']
-        
-        # Simula la selección de columnas
-        datos.opcion2_selector_columnas()
-        
-        self.assertEqual(datos.features, ['col1', 'col2', 'col3'])
-        self.assertEqual(datos.targets, 'col1')  # Suponiendo que el usuario selecciona 'col1' como la columna objetivo
+def test_opcion1_carga_excel(datos_instance):
+    """Prueba la carga de datos desde un archivo Excel."""
+    with patch('menu.cargar_datos', return_value=(2, 'test.xlsx')):
+        with patch('pandas.read_excel', return_value=pd.DataFrame({'A': [1, 2], 'B': [3, 4]})):
+            datos_instance.opcion1_carga()
+            assert datos_instance.datos is not None
+            assert not datos_instance.datos.empty
+            assert datos_instance.ruta == 'test.xlsx'
+            assert datos_instance.paso == 2
 
-    @patch('builtins.input', return_value='2')
-    def test_opcion2_manejo_nulos(self, mock_input):
-        # Simula la detección y manejo de valores nulos
-        datos = Datos(file_path=None)
-        datos.datos = pd.DataFrame({'col1': [1, None], 'col2': [None, 4]})
-        datos.features = ['col1', 'col2']
-        datos.targets = 'col1'
+def test_opcion1_carga_sqlite(datos_instance):
+    """Prueba la carga de datos desde una base de datos SQLite."""
+    mock_conn = MagicMock()
+    with patch('menu.cargar_datos', return_value=(3, 'test.sqlite')):
+        with patch('sqlite3.connect', return_value=mock_conn):
+            with patch('pandas.read_sql', return_value=pd.DataFrame({'name': ['tabla_test']})) as mock_read_sql:
+                with patch('builtins.input', return_value='1'):
+                    mock_read_sql.side_effect = [pd.DataFrame({'A': [1, 2], 'B': [3, 4]}), pd.DataFrame({'name': ['tabla_test']})]
+                    datos_instance.opcion1_carga()
+                    assert datos_instance.datos is not None
+                    assert not datos_instance.datos.empty
+                    assert datos_instance.ruta == 'test.sqlite'
+                    assert datos_instance.paso == 2
 
-        # Ejecutamos el método de manejo de nulos
-        datos.opcion2_manejo_nulos()
+def test_opcion2_selector_columnas(datos_instance):
+    """Prueba la selección de columnas."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6]})
+    with patch('menu.seleccion_terminal', return_value=(['A', 'B'], 'C')):
+        datos_instance.opcion2_selector_columnas()
+        assert datos_instance.features == ['A', 'B']
+        assert datos_instance.targets == 'C'
+        assert datos_instance.paso == 2.2
 
-        # Comprobamos que los nulos se manejaron
-        self.assertFalse(datos.datos['col1'].isnull().any())  # No debe haber valores nulos
-        self.assertFalse(datos.datos['col2'].isnull().any())  # No debe haber valores nulos
+def test_opcion2_manejo_nulos_eliminar(datos_instance):
+    """Prueba el manejo de valores nulos eliminando filas."""
+    datos_instance.datos = pd.DataFrame({'A': [1, None], 'B': [3, 4], 'C': [5, 6]})
+    datos_instance.features = ['A', 'B']
+    datos_instance.targets = 'C'
+    with patch('builtins.input', return_value='1'):
+        datos_instance.opcion2_manejo_nulos()
+        assert len(datos_instance.datos) == 2
+        assert datos_instance.paso == 2.3
 
-    @patch('builtins.input', return_value='1')
-    def test_opcion2_transformar_categoricos(self, mock_input):
-        # Simula la transformación de datos categóricos
-        datos = Datos(file_path=None)
-        datos.datos = pd.DataFrame({'col1': ['a', 'b', 'a'], 'col2': [1, 2, 3]})
-        datos.features = ['col1']
-        
-        # Simula la transformación de datos categóricos
-        datos.opcion2_transformar_categoricos()
-        
-        # Comprobamos que la columna 'col1' se ha transformado correctamente
-        self.assertTrue((datos.datos['col1'] == [0, 1, 0]).all())  # Se aplica Label Encoding
+def test_opcion2_manejo_nulos_media(datos_instance):
+    """Prueba el manejo de valores nulos rellenando con la media."""
+    datos_instance.datos = pd.DataFrame({'A': [1, None], 'B': [3, 4], 'C': [5, 6]})
+    datos_instance.features = ['A', 'B']
+    datos_instance.targets = 'C'
+    with patch('builtins.input', return_value='2'):
+        datos_instance.opcion2_manejo_nulos()
+        assert datos_instance.datos['A'].isnull().sum() == 0
+        assert datos_instance.paso == 2.3
 
-    @patch('builtins.input', return_value='1')
-    def test_opcion2_normalizar_numericas(self, mock_input):
-        # Simula la normalización de datos numéricos
-        datos = Datos(file_path=None)
-        datos.datos = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
-        datos.features = ['col1', 'col2']
-        
-        # Realizamos la normalización
-        datos.opcion2_normalizar_numericas()
-        
-        # Comprobamos que las columnas fueron normalizadas (valores entre 0 y 1)
-        self.assertTrue(datos.datos['col1'].max() <= 1)
-        self.assertTrue(datos.datos['col2'].max() <= 1)
+def test_opcion2_transformar_categoricos_onehot(datos_instance):
+    """Prueba la transformación de datos categóricos con One-Hot Encoding."""
+    datos_instance.datos = pd.DataFrame({'A': ['x', 'y'], 'B': [1, 2]})
+    datos_instance.features = ['A']
+    with patch('builtins.input', return_value='1'):
+        datos_instance.opcion2_transformar_categoricos()
+        assert 'A_x' in datos_instance.datos.columns
+        assert 'A_y' in datos_instance.datos.columns
+        assert datos_instance.paso == 2.4
 
-    @patch('builtins.input', return_value='1')
-    def test_opcion2_manejo_atipicos(self, mock_input):
-        # Simula el manejo de valores atípicos
-        datos = Datos(file_path=None)
-        datos.datos = pd.DataFrame({'col1': [1, 2, 1000], 'col2': [4, 5, 6]})
-        datos.features = ['col1', 'col2']
-        
-        # Ejecutamos el manejo de valores atípicos
-        datos.opcion2_manejo_atipicos()
-        
-        # Verificamos que los valores atípicos fueron tratados
-        self.assertNotIn(1000, datos.datos['col1'])  # El valor atípico debe haberse eliminado
+def test_opcion2_transformar_categoricos_label(datos_instance):
+    """Prueba la transformación de datos categóricos con Label Encoding."""
+    datos_instance.datos = pd.DataFrame({'A': ['x', 'y'], 'B': [1, 2]})
+    datos_instance.features = ['A']
+    with patch('builtins.input', return_value='2'):
+        datos_instance.opcion2_transformar_categoricos()
+        assert datos_instance.datos['A'].dtype == 'int64'
+        assert datos_instance.paso == 2.4
 
-    def test_opcion3_visualizar_datos(self):
-        # Simula la visualización de datos
-        datos = Datos(file_path=None)
-        datos.datos = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
-        datos.features = ['col1', 'col2']
-        
-        # Realizamos una visualización
-        datos.opcion3_visualizar_datos()
-        
-        # Verifica que se generó una visualización correctamente
-        # Esto depende de la implementación de visualización, pero si usas plt.show() deberías comprobar que no haya errores
+def test_opcion2_normalizar_numericas_minmax(datos_instance):
+    """Prueba la normalización de datos numéricos con Min-Max Scaling."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    datos_instance.features = ['A', 'B']
+    with patch('builtins.input', return_value='1'):
+        datos_instance.opcion2_normalizar_numericas()
+        assert datos_instance.datos['A'].min() == 0
+        assert datos_instance.datos['A'].max() == 1
+        assert datos_instance.paso == 2.5
 
-if __name__ == '__main__':
-    unittest.main()
+def test_opcion2_normalizar_numericas_zscore(datos_instance):
+    """Prueba la normalización de datos numéricos con Z-score Normalization."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    datos_instance.features = ['A', 'B']
+    with patch('builtins.input', return_value='2'):
+        datos_instance.opcion2_normalizar_numericas()
+        assert abs(datos_instance.datos['A'].mean()) < 1e-9
+        assert abs(datos_instance.datos['A'].std() - 1) < 1e-9
+        assert datos_instance.paso == 2.5
+
+def test_opcion2_manejo_atipicos_eliminar(datos_instance):
+    """Prueba el manejo de valores atípicos eliminando filas."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2, 10], 'B': [4, 5, 6]})
+    datos_instance.features = ['A', 'B']
+    with patch('builtins.input', return_value='1'):
+        datos_instance.opcion2_manejo_atipicos()
+        assert len(datos_instance.datos) == 2
+        assert datos_instance.paso == 3
+
+def test_opcion2_manejo_atipicos_mediana(datos_instance):
+    """Prueba el manejo de valores atípicos reemplazando con la mediana."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2, 10], 'B': [4, 5, 6]})
+    datos_instance.features = ['A', 'B']
+    with patch('builtins.input', return_value='2'):
+        datos_instance.opcion2_manejo_atipicos()
+        assert datos_instance.datos['A'].max() == 2.0
+        assert datos_instance.paso == 3
+
+def test_opcion3_visualizar_datos_describe(datos_instance):
+    """Prueba la visualización de datos con describe()."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    datos_instance.features = ['A', 'B']
+    datos_instance.paso = 3
+    with patch('builtins.input', return_value='1'):
+        datos_instance.opcion3_visualizar_datos()
+        # No podemos capturar la salida de print, así que solo verificamos que no haya errores
+        assert datos_instance.paso == 4
+
+def test_opcion4_exportar_datos_csv(datos_instance):
+    """Prueba la exportación de datos a CSV."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    datos_instance.paso = 4
+    with patch('builtins.input', return_value='1'):
+        with patch('builtins.input', return_value='test_export'):
+            datos_instance.opcion4_exportar_datos()
+            # No podemos verificar el archivo creado, pero podemos verificar que no haya errores
+            assert datos_instance.paso == 5
+
+def test_opcion4_exportar_datos_excel(datos_instance):
+    """Prueba la exportación de datos a Excel."""
+    datos_instance.datos = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    datos_instance.paso = 4
+    with patch('builtins.input', return_value='2'):
+        with patch('builtins.input', return_value='test_export'):
+            datos_instance.opcion4_exportar_datos()
+            # No podemos verificar el archivo creado, pero podemos verificar que no haya errores
+            assert datos_instance.paso == 5
 
