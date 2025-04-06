@@ -22,9 +22,10 @@ class Datos:
         self.proceso() # Inicia el flujo del menú
 
 
-    def proceso(self): 
+    def proceso(self, opcion = None): 
         while True:
-            opcion = mostrar_menu(self.paso, self.datos, self.ruta)
+            if opcion is None:
+                opcion = mostrar_menu(self.paso, self.datos, self.ruta)
 
             if opcion == "1":  # Cargar datos
                 if self.paso == 1 and not self.datos: # Verifica si los datos ya fueron cargados
