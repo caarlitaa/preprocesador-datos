@@ -54,7 +54,7 @@ class Datos:
             
             elif opcion == "3" and self.paso >= 3: # Visualizar datos antes y después
                 self.opcion3_visualizar_datos()
-                self.preprocesado_comp = True
+                
             
             elif opcion == "4" and self.paso >= 4: # Exportar los datos
                 self.opcion4_exportar_datos()
