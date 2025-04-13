@@ -1,4 +1,3 @@
-
 # Devuelve un símbolo que indica el estado del menú
 def simbolo(paso_requerido, paso_actual):
     if paso_actual < paso_requerido: # paso no alcanzado
@@ -162,7 +161,6 @@ def cerrar():
             break
         else:
             print("\nOpción inválida. Intente de nuevo.")
-
 
 
 
