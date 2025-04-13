@@ -24,8 +24,7 @@ class Datos:
 
     def proceso(self, opcion = None): 
         while True:
-            if opcion is None:
-                opcion = mostrar_menu(self.paso, self.datos, self.ruta)
+            opcion = mostrar_menu(self.paso, self.datos, self.ruta)
 
             if opcion == "1":  # Cargar datos
                 if self.paso == 1 and not self.datos: # Verifica si los datos ya fueron cargados
@@ -280,13 +279,15 @@ class Datos:
         
         if opcion == 1:
             scaler = MinMaxScaler()
+            print("Valores antes de la normalización:",self.datos[numericas].head())
             self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
-            print("Normalización completada con Min-Max Scaling.")
+            print("Normalización completada con Min-Max Scaling", self.datos[numericas].head())
         
         elif opcion == 2:
             scaler = StandardScaler()
+            print("Valores antes de la normalización",self.datos[numericas].head())
             self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
-            print("Normalización completada con Z-score Normalization.")
+            print("Normalización completada con Z-score Normalization.", self.datos[numericas].head())
         
         elif opcion == 3:
             return
