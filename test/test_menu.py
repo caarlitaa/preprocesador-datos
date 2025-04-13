@@ -3,8 +3,12 @@ from unittest.mock import patch, MagicMock
 import io
 import sys
 import os
+
+# Añadir la ruta del directorio principal al sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pandas as pd
-import menu  # Importamos el módulo menu.py
+import menu  # Ahora podrá encontrar el módulo menu
 
 class TestMenuFunctions(unittest.TestCase):
     
@@ -18,9 +22,10 @@ class TestMenuFunctions(unittest.TestCase):
         
         # Configurar rutas de archivos de prueba
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.csv_path = os.path.join(self.current_dir, "data_test.csv")
-        self.excel_path = os.path.join(self.current_dir, "data_test.xlsx")
-        self.sqlite_path = os.path.join(self.current_dir, "data_test.db")
+        self.parent_dir = os.path.abspath(os.path.join(self.current_dir, '..'))
+        self.csv_path = os.path.join(self.parent_dir, "data_test.csv")
+        self.excel_path = os.path.join(self.parent_dir, "data_test.xlsx")
+        self.sqlite_path = os.path.join(self.parent_dir, "data_test.db")
         
         # Crear archivos de prueba si no existen
         if not os.path.exists(self.csv_path):
