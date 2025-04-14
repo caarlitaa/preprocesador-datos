@@ -1,3 +1,4 @@
+
 from menu import mostrar_menu, cerrar, cargar_datos, mostrar_datos, seleccion_terminal
 import os
 import pandas as pd
@@ -51,24 +52,21 @@ class Datos:
                 self.opcion2_manejo_atipicos()
                 self.preprocesado = False
             
-            elif opcion == "3" and self.paso >= 3: # Visualizar datos antes y después
+            elif opcion == "3" and self.paso >= 3: # Visualizar datos antes y después del preprocesado
                 self.opcion3_visualizar_datos()
                 
-            
-            elif opcion == "4" and self.paso >= 4: # Exportar los datos
-                self.opcion4_exportar_datos()
-
             elif opcion == "4" and self.paso >= 4: # Exportar los datos
                 self.opcion4_exportar_datos()
             
-            elif opcion == "5": # Paso para cerrar la app
+            elif opcion == "5": # Cerrar la app
                 cerrar()
             
             else:
                 print("Opción inválida.")
 
     
-    def opcion1_carga(self): # Carga los datos según el  formato
+    # Carga los datos según el  formato
+    def opcion1_carga(self): 
         carga = cargar_datos()
         if carga is None:
             return
@@ -91,28 +89,27 @@ class Datos:
                     self.datos = pd.read_excel(ruta)
                 
             elif ruta.endswith('.sqlite') or ruta.endswith('.db'): # Carga dese una base de datos SQLite
-                    conn = sqlite3.connect(ruta)
-                    query = "SELECT name FROM sqlite_master WHERE type='table';"
-                    tables = pd.read_sql(query, conn) # Obtiene las tablas de la base
+                    conexion = sqlite3.connect(ruta)
+                    consulta = "SELECT name FROM sqlite_master WHERE type='table';"
+                    tablas = pd.read_sql(consulta, conexion) 
                     
-                    if tables.empty:
+                    if tablas.empty:
                         raise ValueError("No se encontraron tablas disponibles.")
                     
                     # Muestra las tablas disponibles y solicita la selección de una
                     print("Tablas disponibles en la base de datos:")
-                    for i, table in enumerate(tables['name'], 1):
-                        print(f"  [{i}] {table}")
+                    for i, tabla in enumerate(tablas['name'], 1):
+                        print(f"  [{i}] {tabla}")
 
                     seleccion = input("Seleccione una tabla: ") 
-                    if not seleccion.isdigit() or not (1 <= int(seleccion) <= len(tables)):
+                    if not seleccion.isdigit() or not (1 <= int(seleccion) <= len(tablas)):
                         raise ValueError("Selección inválida.")
                     
                     # Obtiene el nombre y carga sus datos
-                    tabla_seleccionada = tables.iloc[int(seleccion) - 1]['name']
-                    self.datos = pd.read_sql(f"SELECT * FROM {tabla_seleccionada}", conn)
-                    conn.close()
+                    tabla_seleccionada = tablas.iloc[int(seleccion) - 1]['name']
+                    self.datos = pd.read_sql(f"SELECT * FROM {tabla_seleccionada}", conexion)
+                    conexion.close()
                     
-                    mostrar_datos(self.datos,ruta)
                     print(f"Los datos de {tabla_seleccionada} fueron cargados correctamente")
             
             mostrar_datos(self.datos, ruta)
