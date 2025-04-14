@@ -1,3 +1,4 @@
+
 from menu import mostrar_menu, cerrar, cargar_datos, mostrar_datos, seleccion_terminal
 import os
 import pandas as pd
@@ -5,6 +6,7 @@ import sqlite3
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
+
 
 # Clase que maneja la carga y el preprocesamiento
 class Datos: 
@@ -15,12 +17,15 @@ class Datos:
         self.targets = None
         self.paso = 1
         self.preprocesado = False
+    
+        
 
         self.proceso() # Inicia el flujo del menú
 
-    def proceso(self): 
+
+    def proceso(self, opcion = None): 
         while True:
-            opcion = mostrar_menu(self.paso, self.paso, self.ruta)
+            opcion = mostrar_menu(self.paso, self.datos, self.ruta)
 
             if opcion == "1":  # Cargar datos
                 if self.paso == 1 and not self.datos: # Verifica si los datos ya fueron cargados
@@ -29,33 +34,31 @@ class Datos:
                     print(" Los datos ya están cargados.")
             
             elif opcion == "2" and self.paso == 2: # Preprocesamiento
-                self.paso = 2.1 # Avanza al primer paso de preprocesamiento
+                self.paso = 2.1 
             
             elif opcion == "2.1" and self.paso >= 2.1: # Selección de columnas 
                 if not self.preprocesado:
                     self.opcion2_selector_columnas()
-                else:
+                else: 
                     print("No se pueden cambiar las columnas una vez que se inicia el preprocesado")
-            
             elif opcion == "2.2" and self.paso >= 2.2: # Manejar valores faltantes
                 self.preprocesado = True
                 self.opcion2_manejo_nulos()
-            
             elif opcion == "2.3" and self.paso >= 2.3: # Transformar datos categóricos
                 self.opcion2_transformar_categoricos()
-            
             elif opcion == "2.4" and self.paso >= 2.4: # Normalizar y escalar valores numéricas
                 self.opcion2_normalizar_numericas()
-            
             elif opcion == "2.5" and self.paso >= 2.5: # Manejar valores atípicos
                 self.opcion2_manejo_atipicos()
                 self.preprocesado = False
             
-            elif opcion == "3" and self.paso >= 3: # Visualizar datos antes y después
+            elif opcion == "3" and self.paso >= 3: # Visualizar datos antes y después del preprocesado
                 self.opcion3_visualizar_datos()
+                
+            elif opcion == "4" and self.paso >= 4: # Exportar los datos
+                self.opcion4_exportar_datos()
             
-            
-            elif opcion == "5": # Paso para cerrar la app
+            elif opcion == "5": # Cerrar la app
                 cerrar()
             
             else:
@@ -67,11 +70,9 @@ class Datos:
         carga = cargar_datos()
         if carga is None:
             return
-        
         opcion, ruta = carga
-
         if not ruta or not os.path.exists(ruta):
-            print("Archivo no válido, intente de nuevo")
+            print("Archivo no válido, inténtelo de nuevo")
             return
         
         # Verifica que la extensión coincida con la opción seleccionada
@@ -90,7 +91,7 @@ class Datos:
             elif ruta.endswith('.sqlite') or ruta.endswith('.db'): # Carga dese una base de datos SQLite
                     conexion = sqlite3.connect(ruta)
                     consulta = "SELECT name FROM sqlite_master WHERE type='table';"
-                    tablas = pd.read_sql(consulta, conexion) # Obtiene las tablas de la base
+                    tablas = pd.read_sql(consulta, conexion) 
                     
                     if tablas.empty:
                         raise ValueError("No se encontraron tablas disponibles.")
@@ -109,16 +110,16 @@ class Datos:
                     self.datos = pd.read_sql(f"SELECT * FROM {tabla_seleccionada}", conexion)
                     conexion.close()
                     
-                    mostrar_datos(self.datos,ruta)
                     print(f"Los datos de {tabla_seleccionada} fueron cargados correctamente")
             
             mostrar_datos(self.datos, ruta)
             self.paso = 2
             self.ruta = ruta
                 
+                
         except Exception as e:
             raise ValueError(f"Error al importar datos: {str(e)}")
-    
+
     # Selecciona las columnas de entrada y salida
     def opcion2_selector_columnas(self):
         self.features, self.targets = seleccion_terminal(list(self.datos.columns))
@@ -137,6 +138,7 @@ class Datos:
             print("Manejo de Valores Faltantes")
             print("=============================")
             print("No se han detectado valores faltantes en las columnas seleccionadas.")
+            print("No es necesario aplicar ninguna estrategia")
             self.paso = 2.3
             return
         
@@ -168,11 +170,9 @@ class Datos:
         elif opcion == 2:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).mean(), inplace=True)
             print("Valores faltantes rellenados con la media de cada columna")
-        
         elif opcion == 3:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).median(), inplace=True)
             print("Valores faltantes rellenados con la mediana de cada columna")
-        
         elif opcion == 4:
             self.datos.fillna(self.datos.select_dtypes(include=['number']).mode().iloc[0], inplace=True)
             print("Valores faltantes rellenados con la moda de cada columna")
@@ -183,7 +183,6 @@ class Datos:
             self.datos.fillna(float(valor), inplace=True)
             print(f"Valores faltantes reemplazados con el valor {valor}")
         
-        # Volver al menú principal
         elif opcion == 6:
             return
         else:
@@ -192,13 +191,15 @@ class Datos:
         
         
         self.paso = 2.3
+        
     
     # Transformación de datos categóricos
     def opcion2_transformar_categoricos(self):
+
         # Filtra las columnas categóricas dentro de las features seleccionadas
         categoricos = [columna for columna in self.features if self.datos[columna].dtype == 'object']
 
-        # Si no hay, informa y marca el paso
+        # Si no hay, informa de ello
         if not categoricos:
             print("\n=============================")
             print("Transformación de Datos Categóricos")
@@ -244,7 +245,7 @@ class Datos:
             return
         
         self.paso = 2.4
-    
+
     def opcion2_normalizar_numericas(self):
         # Filtra las columnas numéricas dentro de las features seleccionadas
         numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
@@ -275,13 +276,15 @@ class Datos:
         
         if opcion == 1:
             scaler = MinMaxScaler()
+            print("Valores antes de la normalización:",self.datos[numericas].head())
             self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
-            print("Normalización completada con Min-Max Scaling.")
+            print("Normalización completada con Min-Max Scaling", self.datos[numericas].head())
         
         elif opcion == 2:
             scaler = StandardScaler()
+            print("Valores antes de la normalización",self.datos[numericas].head())
             self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
-            print("Normalización completada con Z-score Normalization.")
+            print("Normalización completada con Z-score Normalization.", self.datos[numericas].head())
         
         elif opcion == 3:
             return
@@ -293,6 +296,7 @@ class Datos:
         self.paso = 2.5 
         
     
+
     def opcion2_manejo_atipicos(self):
         # Seleccionamos las columnas numéricas dentro de las variables de entrada
         numericas = [columna for columna in self.features if columna in self.datos.columns and self.datos[columna].dtype in ['int64', 'float64']]
@@ -370,8 +374,9 @@ class Datos:
             return
         
         self.paso = 3
+        
 
-    
+
     def opcion3_visualizar_datos(self):
         print("\n=============================")
         print("Visualización de Datos")
