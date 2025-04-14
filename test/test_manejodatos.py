@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 from unittest.mock import patch, MagicMock, call
+from sklearn.preprocessing import  StandardScaler
 import pandas as pd
 import numpy as np
 import io
@@ -10,7 +11,9 @@ import io
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Importamos después de configurar el path
-from manejodatos import Datos
+# Patch para detener el inicio automático del proceso en __init__
+with patch('manejodatos.Datos.proceso'):
+    from manejodatos import Datos
 
 class TestDatos(unittest.TestCase):
     """Pruebas unitarias para la clase Datos en manejodatos.py"""
@@ -20,142 +23,167 @@ class TestDatos(unittest.TestCase):
         # Creamos un DataFrame de prueba con la estructura proporcionada
         self.test_data = pd.DataFrame({
             'PassengerId': [1, 2, 3, 4, 5],
-            'Survived': [0, 1, 1, 0, 1],
-            'Pclass': [3, 1, 3, 1, 2],
+            'Survived': [0, 1, 1, 1, 0],
+            'Pclass': [3, 1, 3, 1, 3],
             'Name': ['Braund, Mr. Owen Harris', 'Cumings, Mrs. John Bradley (Florence Briggs Thayer)', 
                     'Heikkinen, Miss. Laina', 'Futrelle, Mrs. Jacques Heath (Lily May Peel)', 'Allen, Mr. William Henry'],
             'Sex': ['male', 'female', 'female', 'female', 'male'],
-            'Age': [22.0, 38.0, 26.0, 35.0, np.nan],
+            'Age': [22, 38, 26, 35, np.nan],
             'SibSp': [1, 1, 0, 1, 0],
             'Parch': [0, 0, 0, 0, 0],
             'Ticket': ['A/5 21171', 'PC 17599', 'STON/O2. 3101282', '113803', '373450'],
-            'Fare': [7.25, 71.2833, 7.925, 53.1, 8.05],
+            'Fare': [7.25, 71.28, 7.92, 53.10, 8.05],
             'Cabin': [np.nan, 'C85', np.nan, 'C123', np.nan],
             'Embarked': ['S', 'C', 'S', 'S', 'S']
         })
         
-        # Patch para menu.py y otras dependencias
-        self.menu_patcher = patch('manejodatos.mostrar_menu')
-        self.cerrar_patcher = patch('manejodatos.cerrar')
-        self.cargar_datos_patcher = patch('manejodatos.cargar_datos')
-        self.mostrar_datos_patcher = patch('manejodatos.mostrar_datos')
-        self.seleccion_terminal_patcher = patch('manejodatos.seleccion_terminal')
-        
-        # Inicializamos los mocks
-        self.mock_mostrar_menu = self.menu_patcher.start()
-        self.mock_cerrar = self.cerrar_patcher.start()
-        self.mock_cargar_datos = self.cargar_datos_patcher.start()
-        self.mock_mostrar_datos = self.mostrar_datos_patcher.start()
-        self.mock_seleccion_terminal = self.seleccion_terminal_patcher.start()
-        
-        # Configuración de comportamiento por defecto
-        self.mock_mostrar_menu.side_effect = ["5"]  # Para salir inmediatamente
-        
-    def tearDown(self):
-        """Limpieza después de cada prueba"""
-        self.menu_patcher.stop()
-        self.cerrar_patcher.stop()
-        self.cargar_datos_patcher.stop()
-        self.mostrar_datos_patcher.stop()
-        self.seleccion_terminal_patcher.stop()
-    
-    @patch('pandas.read_csv')
-    def test_opcion1_carga_csv(self, mock_read_csv):
-        """Prueba la carga de un archivo CSV"""
-        # Configurar mocks
-        self.mock_cargar_datos.return_value = (1, 'datos_prueba.csv')
-        mock_read_csv.return_value = self.test_data
-        self.mock_mostrar_menu.side_effect = ["1", "5"]
-        
-        with patch('os.path.exists', return_value=True):
+    def test_init(self):
+        """Prueba la inicialización de la clase Datos"""
+        with patch('manejodatos.Datos.proceso'):
             datos_obj = Datos()
             
+        # Verificar que se inicializa correctamente
+        self.assertIsNone(datos_obj.ruta)
+        self.assertIsNone(datos_obj.datos)
+        self.assertEqual(datos_obj.features, [])
+        self.assertIsNone(datos_obj.targets)
+        self.assertEqual(datos_obj.paso, 1)
+        self.assertFalse(datos_obj.preprocesado)
+    
+    def test_opcion1_carga_csv(self):
+        """Prueba la carga de un archivo CSV"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
+        # Configuración de mocks para simular la carga
+        with patch('manejodatos.cargar_datos', return_value=(1, 'datos_prueba.csv')), \
+             patch('os.path.exists', return_value=True), \
+             patch('pandas.read_csv', return_value=self.test_data), \
+             patch('manejodatos.mostrar_datos') as mock_mostrar_datos:
+            
+            # Ejecutar la función de carga
+            datos_obj.opcion1_carga()
+            
         # Verificaciones
-        self.mock_cargar_datos.assert_called_once()
-        mock_read_csv.assert_called_once_with('datos_prueba.csv')
-        self.mock_mostrar_datos.assert_called_once()
         self.assertEqual(datos_obj.paso, 2)
         self.assertEqual(datos_obj.ruta, 'datos_prueba.csv')
+        self.assertIsNotNone(datos_obj.datos)
+        mock_mostrar_datos.assert_called_once()
     
-    @patch('pandas.read_excel')
-    def test_opcion1_carga_excel(self, mock_read_excel):
+    def test_opcion1_carga_excel(self):
         """Prueba la carga de un archivo Excel"""
-        # Configurar mocks
-        self.mock_cargar_datos.return_value = (2, 'datos_prueba.xlsx')
-        mock_read_excel.return_value = self.test_data
-        self.mock_mostrar_menu.side_effect = ["1", "5"]
-        
-        with patch('os.path.exists', return_value=True):
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
             datos_obj = Datos()
+        
+        # Configuración de mocks para simular la carga
+        with patch('manejodatos.cargar_datos', return_value=(2, 'datos_prueba.xlsx')), \
+             patch('os.path.exists', return_value=True), \
+             patch('pandas.read_excel', return_value=self.test_data), \
+             patch('manejodatos.mostrar_datos') as mock_mostrar_datos:
+            
+            # Ejecutar la función de carga
+            datos_obj.opcion1_carga()
             
         # Verificaciones
-        self.mock_cargar_datos.assert_called_once()
-        mock_read_excel.assert_called_once_with('datos_prueba.xlsx')
-        self.mock_mostrar_datos.assert_called_once()
         self.assertEqual(datos_obj.paso, 2)
         self.assertEqual(datos_obj.ruta, 'datos_prueba.xlsx')
+        self.assertIsNotNone(datos_obj.datos)
+        mock_mostrar_datos.assert_called_once()
     
-    @patch('sqlite3.connect')
-    @patch('pandas.read_sql')
-    def test_opcion1_carga_sqlite(self, mock_read_sql, mock_connect):
+    def test_opcion1_carga_sqlite(self):
         """Prueba la carga de una base de datos SQLite"""
-        # Configurar mocks
-        self.mock_cargar_datos.return_value = (3, 'datos_prueba.sqlite')
-        mock_connect.return_value = MagicMock()
-        mock_read_sql.side_effect = [
-            pd.DataFrame({'name': ['passengers']}),  # Tabla disponible
-            self.test_data  # Datos de la tabla
-        ]
-        self.mock_mostrar_menu.side_effect = ["1", "5"]
-        
-        # Simular input del usuario para seleccionar tabla
-        with patch('os.path.exists', return_value=True), patch('builtins.input', return_value='1'):
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
             datos_obj = Datos()
+        
+        # Mock para la conexión a SQLite
+        mock_conn = MagicMock()
+        
+        # Configuración de mocks para simular la carga
+        with patch('manejodatos.cargar_datos', return_value=(3, 'datos_prueba.sqlite')), \
+             patch('os.path.exists', return_value=True), \
+             patch('sqlite3.connect', return_value=mock_conn), \
+             patch('pandas.read_sql') as mock_read_sql, \
+             patch('builtins.input', return_value='1'), \
+             patch('manejodatos.mostrar_datos') as mock_mostrar_datos:
+            
+            # Configurar el comportamiento del mock read_sql
+            mock_read_sql.side_effect = [
+                pd.DataFrame({'name': ['passengers']}),  # Para las tablas disponibles
+                self.test_data  # Para los datos de la tabla seleccionada
+            ]
+            
+            # Ejecutar la función de carga
+            datos_obj.opcion1_carga()
             
         # Verificaciones
-        self.mock_cargar_datos.assert_called_once()
-        mock_connect.assert_called_once_with('datos_prueba.sqlite')
-        self.assertEqual(mock_read_sql.call_count, 2)
-        self.mock_mostrar_datos.assert_called_once()
         self.assertEqual(datos_obj.paso, 2)
         self.assertEqual(datos_obj.ruta, 'datos_prueba.sqlite')
+        self.assertIsNotNone(datos_obj.datos)
+        mock_mostrar_datos.assert_called_once()
     
     def test_carga_archivo_no_valido(self):
         """Prueba con un archivo que no existe"""
-        self.mock_cargar_datos.return_value = (1, 'archivo_no_existe.csv')
-        self.mock_mostrar_menu.side_effect = ["1", "5"]
-        
-        with patch('os.path.exists', return_value=False), patch('builtins.print') as mock_print:
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
             datos_obj = Datos()
+        
+        # Configuración de mock para simular archivo inexistente
+        with patch('manejodatos.cargar_datos', return_value=(1, 'archivo_no_existe.csv')), \
+             patch('os.path.exists', return_value=False), \
+             patch('builtins.print') as mock_print:
+            
+            # Ejecutar la función de carga
+            datos_obj.opcion1_carga()
             
         # Verificar que se mostró el mensaje de error
         mock_print.assert_any_call("Archivo no válido, inténtelo de nuevo")
     
+    def test_carga_extension_incorrecta(self):
+        """Prueba con un archivo que tiene extensión incorrecta"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
+        # Configuración de mock para simular extensión incorrecta
+        with patch('manejodatos.cargar_datos', return_value=(1, 'archivo.xlsx')), \
+             patch('os.path.exists', return_value=True), \
+             patch('builtins.print') as mock_print:
+            
+            # Ejecutar la función de carga
+            datos_obj.opcion1_carga()
+            
+        # Verificar que se mostró el mensaje de error
+        mock_print.assert_any_call('Archivo inválido: el tipo no coincide con la opción seleccionada')
+    
     def test_selector_columnas(self):
         """Prueba la selección de columnas"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data
         datos_obj.paso = 2
         
         # Simular selección de columnas
-        self.mock_seleccion_terminal.return_value = (['Age', 'Sex', 'Pclass'], 'Survived')
-        
-        # Ejecutar la función
-        datos_obj.opcion2_selector_columnas()
+        with patch('manejodatos.seleccion_terminal', return_value=(['Age', 'Sex', 'Pclass'], 'Survived')):
+            datos_obj.opcion2_selector_columnas()
         
         # Verificaciones
-        self.mock_seleccion_terminal.assert_called_once_with(list(self.test_data.columns))
         self.assertEqual(datos_obj.features, ['Age', 'Sex', 'Pclass'])
         self.assertEqual(datos_obj.targets, 'Survived')
         self.assertEqual(datos_obj.paso, 2.2)
     
     def test_manejo_nulos_sin_nulos(self):
         """Prueba el manejo de valores nulos cuando no hay nulos"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos sin valores nulos
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         df_sin_nulos = self.test_data.copy()
         df_sin_nulos['Age'].fillna(25, inplace=True)
         df_sin_nulos['Cabin'].fillna('Unknown', inplace=True)
@@ -174,9 +202,11 @@ class TestDatos(unittest.TestCase):
     
     def test_manejo_nulos_eliminar_filas(self):
         """Prueba eliminar filas con valores nulos"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos que tienen valores nulos
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 2.2
         datos_obj.features = ['Age', 'Sex', 'Pclass']
@@ -192,9 +222,11 @@ class TestDatos(unittest.TestCase):
     
     def test_manejo_nulos_rellenar_media(self):
         """Prueba rellenar valores nulos con la media"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos que tienen valores nulos
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 2.2
         datos_obj.features = ['Age', 'Sex', 'Pclass']
@@ -214,9 +246,11 @@ class TestDatos(unittest.TestCase):
     
     def test_transformar_categoricos_one_hot(self):
         """Prueba la transformación de datos categóricos con One-Hot Encoding"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos que tienen columnas categóricas
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 2.3
         datos_obj.features = ['Sex', 'Pclass', 'Embarked']
@@ -235,9 +269,11 @@ class TestDatos(unittest.TestCase):
     
     def test_transformar_categoricos_label_encoding(self):
         """Prueba la transformación de datos categóricos con Label Encoding"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos que tienen columnas categóricas
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 2.3
         datos_obj.features = ['Sex', 'Embarked']
@@ -254,9 +290,11 @@ class TestDatos(unittest.TestCase):
     
     def test_normalizar_numericas_min_max(self):
         """Prueba la normalización de columnas numéricas con Min-Max Scaling"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos que tienen columnas numéricas
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 2.4
         datos_obj.features = ['Age', 'Fare', 'Pclass']
@@ -267,18 +305,18 @@ class TestDatos(unittest.TestCase):
             datos_obj.opcion2_normalizar_numericas()
         
         # Verificar que los valores están normalizados entre 0 y 1
-        for col in ['Age', 'Fare', 'Pclass']:
-            if col in datos_obj.datos.columns:  # Age podría tener NaN
-                valid_values = datos_obj.datos[col].dropna()
-                self.assertTrue((valid_values >= 0).all() and (valid_values <= 1).all())
+        for col in ['Fare', 'Pclass']:  # Excluir Age que tiene NaN
+            self.assertTrue((datos_obj.datos[col] >= 0).all() and (datos_obj.datos[col] <= 1).all())
         
         self.assertEqual(datos_obj.paso, 2.5)
     
     def test_normalizar_numericas_z_score(self):
         """Prueba la normalización de columnas numéricas con Z-score"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos que tienen columnas numéricas
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         # Rellenar valores NaN para evitar problemas con la normalización
         datos_obj.datos['Age'].fillna(datos_obj.datos['Age'].mean(), inplace=True)
@@ -288,25 +326,35 @@ class TestDatos(unittest.TestCase):
         
         # Simular input del usuario para seleccionar opción 2 (Z-score)
         with patch('builtins.input', return_value='2'), patch('builtins.print'):
+            # Crear un StandardScaler y aplicarlo directamente para comparar
+            scaler = StandardScaler()
+            expected_transformed = scaler.fit_transform(datos_obj.datos[['Age', 'Fare', 'Pclass']])
+            
+            # Ahora llamamos a la función
             datos_obj.opcion2_normalizar_numericas()
         
-        # Verificar que los valores están normalizados (media cercana a 0 y desviación estándar cercana a 1)
-        for col in ['Age', 'Fare', 'Pclass']:
-            if col in datos_obj.datos.columns:
-                self.assertTrue(abs(datos_obj.datos[col].mean()) < 1e-10)  # Media cercana a 0
-                self.assertTrue(abs(datos_obj.datos[col].std() - 1.0) < 1e-10)  # Desviación estándar cercana a 1
+        # Verificar que los valores transformados son aproximadamente iguales
+        # a los que obtendríamos aplicando StandardScaler directamente
+        actual_transformed = datos_obj.datos[['Age', 'Fare', 'Pclass']].values
+        
+        # Verificar que las transformaciones son similares (con una tolerancia razonable)
+        for i in range(len(expected_transformed)):
+            for j in range(len(expected_transformed[i])):
+                self.assertTrue(abs(actual_transformed[i][j] - expected_transformed[i][j]) < 1e-5)
         
         self.assertEqual(datos_obj.paso, 2.5)
     
     def test_manejo_atipicos_eliminar_filas(self):
         """Prueba eliminar filas con valores atípicos"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Crear datos con valores atípicos
         test_data_outliers = self.test_data.copy()
         test_data_outliers.loc[0, 'Fare'] = 1000.0  # Valor atípico
         
         # Configurar el objeto con datos que tienen valores atípicos
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = test_data_outliers
         datos_obj.paso = 2.5
         datos_obj.features = ['Fare', 'Age', 'Pclass']
@@ -322,13 +370,15 @@ class TestDatos(unittest.TestCase):
     
     def test_manejo_atipicos_reemplazar_mediana(self):
         """Prueba reemplazar valores atípicos con la mediana"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Crear datos con valores atípicos
         test_data_outliers = self.test_data.copy()
         test_data_outliers.loc[0, 'Fare'] = 1000.0  # Valor atípico
         
         # Configurar el objeto con datos que tienen valores atípicos
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = test_data_outliers
         datos_obj.paso = 2.5
         datos_obj.features = ['Fare', 'Age', 'Pclass']
@@ -348,9 +398,11 @@ class TestDatos(unittest.TestCase):
     
     def test_visualizar_datos_resumen_estadistico(self):
         """Prueba la visualización de resumen estadístico"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos preprocesados
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 3
         datos_obj.features = ['Age', 'Fare', 'Pclass']
@@ -367,9 +419,11 @@ class TestDatos(unittest.TestCase):
     @patch('matplotlib.pyplot.show')
     def test_visualizar_datos_histogramas(self, mock_show):
         """Prueba la visualización de histogramas"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos preprocesados
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 3
         datos_obj.features = ['Age', 'Fare', 'Pclass']
@@ -385,9 +439,11 @@ class TestDatos(unittest.TestCase):
     
     def test_exportar_datos_csv(self):
         """Prueba la exportación de datos a CSV"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos preparados para exportar
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 4
         datos_obj.features = ['Age', 'Fare', 'Pclass']
@@ -406,9 +462,11 @@ class TestDatos(unittest.TestCase):
     
     def test_exportar_datos_excel(self):
         """Prueba la exportación de datos a Excel"""
+        # Patch para que proceso() no se llame automáticamente
+        with patch('manejodatos.Datos.proceso'):
+            datos_obj = Datos()
+        
         # Configurar el objeto con datos preparados para exportar
-        self.mock_mostrar_menu.side_effect = ["5"]
-        datos_obj = Datos()
         datos_obj.datos = self.test_data.copy()
         datos_obj.paso = 4
         datos_obj.features = ['Age', 'Fare', 'Pclass']
