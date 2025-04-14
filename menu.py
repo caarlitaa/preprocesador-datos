@@ -1,10 +1,11 @@
+
 # Devuelve un símbolo que indica el estado del menú
 def simbolo(paso_requerido, paso_actual):
-    if paso_actual < paso_requerido: # paso no alcanzado
+    if paso_actual < paso_requerido: # Paso no alcanzado
         return '✗'
-    elif paso_actual == paso_requerido or (paso_requerido == 2 and paso_actual < 3): # paso en ejecución
+    elif paso_actual == paso_requerido or (paso_requerido == 2 and paso_actual < 3): # Paso en ejecución
         return '-'
-    else: # paso completado
+    else: # Paso completado
         return '✓'
     
 def mostrar_menu(paso, datos, ruta):
@@ -12,8 +13,9 @@ def mostrar_menu(paso, datos, ruta):
     print("       Menú Principal       ")
     print("=============================")
 
-    print(f"[{simbolo(1, paso)}] 1. Cargar datos ({'ningún archivo cargado' if paso <= 1 else f'archivo {ruta} cargado'})") # Si los datos fueron cargados se muestra el tick
-    print(f"[{simbolo(2, paso)}] 2. Preprocesado de datos {'(requiere carga de datos)' if paso < 2 else '(selección de columnas requerida)' if paso == 2 else '(completado)' if paso >= 3 else ''}")  # Se necesitan datos para las siguientes funciones
+    print(f"[{simbolo(1, paso)}] 1. Cargar datos ({'ningún archivo cargado' if paso <= 1 else f'archivo {ruta} cargado'})") 
+    # Se necesitan datos para las siguientes funciones
+    print(f"[{simbolo(2, paso)}] 2. Preprocesado de datos {'(requiere carga de datos)' if paso < 2 else '(selección de columnas requerida)' if paso == 2 else '(completado)' if paso >= 3 else ''}")  
 
     # Si ya se cargaron los datos se habilita el preprocesado
     if paso > 2:  
@@ -31,7 +33,8 @@ def mostrar_menu(paso, datos, ruta):
     opcion = input("Seleccione una opción: ")
     return opcion
     
-def cargar_datos(): # Carga los datos dependiendo del tipo de archivo
+# Carga los datos dependiendo del tipo de archivo
+def cargar_datos(): 
     while True:
         print("\n=============================")
         print("       Carga de Datos       ")
@@ -46,18 +49,15 @@ def cargar_datos(): # Carga los datos dependiendo del tipo de archivo
 
         if opcion == 4:
             return  # Termina el bucle y vuelve al menú principal
-        if opcion not in [1, 2, 3]:
+        elif opcion not in [1, 2, 3]:
             print("Opción inválida. Intente de nuevo.")
         else:
             ruta = input("Ingrese la ruta del archivo: ")
-            #print("Ingrese la ruta del archivo: TRUCADO")
-            #ruta = r"C:\Users\ccarr\OneDrive - Universidade da Coruña\Escritorio\IS\recuperación\titanic_survival.db"
             return (opcion, ruta)
         
 # Muestra información sobre los datos
 def mostrar_datos(datos, fuente): 
     print("\nDatos cargados correctamente.")
-    print(f"Fuente: {fuente}")
     print(f"Número de filas: {datos.shape[0]}")
     print(f"Número de columnas: {datos.shape[1]}")
     print("\nTipos de datos por columna:")
@@ -79,7 +79,7 @@ def seleccion_terminal(columnas):
 
         # Validar que las columnas seleccionadas estén dentro del rango
         indices_features = []
-        valid_input = True  # Variable para controlar si hay una entrada fuera de rango
+        valida = True  # Variable para controlar si hay una entrada fuera de rango
 
         try:
             for x in entrada.split(","):
@@ -91,18 +91,18 @@ def seleccion_terminal(columnas):
                             indices_features.append(indice)
                     else:
                         print(f"\nError: La columna '{x}' está fuera del rango. Debe seleccionar un número entre 1 y {len(columnas)}.")
-                        valid_input = False
+                        valida = False
                         break  # Si alguna columna está fuera de rango, reiniciamos la selección
                 else:
                     print(f"\nError: '{x}' no es un número válido.")
-                    valid_input = False
+                    valida = False
                     break
         except ValueError:
             print("Entrada inválida. Asegúrese de ingresar números válidos separados por comas.")
-            valid_input = False
+            valida = False
 
         # Si la entrada es inválida, le pedimos al usuario que intente de nuevo
-        if not valid_input or not indices_features:
+        if not valida or not indices_features:
             continue  # Volver a solicitar la entrada de las características
 
         # Muestra las columnas seleccionadas como features
@@ -110,7 +110,7 @@ def seleccion_terminal(columnas):
         for idx in indices_features:
             print(f"  - {columnas[idx]}")
         
-        # Solicita al usuario que seleccione la columna target (de salida)
+        # Solicita al usuario que seleccione la columna de salida (target)
         while True:
             indice_target = obtener_indice_valido("Ingrese el número de la columna de salida (target): ", len(columnas))
 
@@ -143,7 +143,7 @@ def obtener_indice_valido(mensaje, max_opciones):
 
 # Cerrar la app de forma segura        
 def cerrar(): 
-    while True: # Se ejecuta mientras salir sea falso
+    while True: 
         print("\n=============================")
         print("     Salir de la Aplicación  ")
         print("=============================")
