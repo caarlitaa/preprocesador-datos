@@ -58,6 +58,7 @@ def cargar_datos():
 # Muestra información sobre los datos
 def mostrar_datos(datos, fuente): 
     print("\nDatos cargados correctamente.")
+    print(f"Fuente: {fuente}")
     print(f"Número de filas: {datos.shape[0]}")
     print(f"Número de columnas: {datos.shape[1]}")
     print("\nTipos de datos por columna:")
