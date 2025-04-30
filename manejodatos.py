@@ -226,7 +226,7 @@ class Datos:
         opcion = int(input("Seleccione una opción:"))
 
         if opcion == 1: # Crea nuevas columnas binarias para cada categoría
-            self.datos = pd.get_dummies(self.datos, columns = categoricos)
+            self.datos = pd.get_dummies(self.datos, columns = categoricos, dtype = int)
             print("Transformación completada con One-Hot Encoding")
 
         elif opcion == 2: # Asigna un número entero a cada categoría
@@ -276,15 +276,13 @@ class Datos:
         
         if opcion == 1:
             scaler = MinMaxScaler()
-            print("Valores antes de la normalización:",self.datos[numericas].head())
             self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
-            print("Normalización completada con Min-Max Scaling", self.datos[numericas].head())
+            print("Normalización completada con Min-Max Scaling")
         
         elif opcion == 2:
             scaler = StandardScaler()
-            print("Valores antes de la normalización",self.datos[numericas].head())
             self.datos[numericas] = scaler.fit_transform(self.datos[numericas])
-            print("Normalización completada con Z-score Normalization.", self.datos[numericas].head())
+            print("Normalización completada con Z-score Normalization.")
         
         elif opcion == 3:
             return
@@ -404,9 +402,24 @@ class Datos:
 
         opcion = int(input("Seleccione una opción: "))
         
-        if opcion == 1: # Resumen estadísticos de las columnas seleccionadas
+        if opcion == 1:  # Resumen estadísticos de las columnas seleccionadas
             print("\nResumen estadístico de las variables seleccionadas:")
-            print(self.datos[columnas].describe())
+            print("-------------------------------------------------------------------")
+            print("Variable      | Media | Mediana | Desviación Est. | Mínimo | Máximo")
+            print("-------------------------------------------------------------------")
+            
+            # Obtener estadísticas
+            estadisticas = self.datos[columnas].describe().T  # Transpone para tener variables en filas
+            
+            # Imprimir cada fila
+            for variable in estadisticas.index:
+                media = round(estadisticas.loc[variable, 'mean'], 1)
+                mediana = round(estadisticas.loc[variable, '50%'], 0)
+                desv = round(estadisticas.loc[variable, 'std'], 1)
+                minimo = round(estadisticas.loc[variable, 'min'], 0)
+                maximo = round(estadisticas.loc[variable, 'max'], 0)
+                
+                print(f"{variable:<13} | {media:<5} | {mediana:<7} | {desv:<15} | {minimo:<6} | {maximo}")
         
         elif opcion == 2: # Histogramas para las columnas numéricas
             self.datos[columnas].hist(bins=20, figsize=(12, 8))
