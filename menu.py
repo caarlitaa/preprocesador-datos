@@ -63,6 +63,8 @@ def mostrar_datos(datos, fuente):
     print(f"Fuente: {fuente}")
     print(f"Número de filas: {datos.shape[0]}")
     print(f"Número de columnas: {datos.shape[1]}")
+    print(f"Tipo de datos por columna: ")
+    print(datos.dtypes)
     print("\nPrimeras 5 filas:")
     print(datos.head())
 
